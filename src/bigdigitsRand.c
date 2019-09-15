@@ -29,63 +29,57 @@ static uint32_t btrrand(void);
 /* EXPORTED FUNCTIONS */
 /**********************/
 
-DIGIT_T spBetterRand(void)
-{	/*	Returns a "better" pseudo-random digit. */
-	return (DIGIT_T)btrrand();
+DIGIT_T spBetterRand(void) {    /*	Returns a "better" pseudo-random digit. */
+    return (DIGIT_T) btrrand();
 }
 
 /* Added [v2.2] */
 size_t mpRandomBits(DIGIT_T a[], size_t ndigits, size_t nbits)
-	/* Generate a random mp number <= 2^{nbits}-1 using internal RNG */
+/* Generate a random mp number <= 2^{nbits}-1 using internal RNG */
 {
-	const int bits_per_digit = BITS_PER_DIGIT;
-	size_t i;
-	int j;
-	DIGIT_T r;
+    const int bits_per_digit = BITS_PER_DIGIT;
+    size_t i;
+    int j;
+    DIGIT_T r;
 
-	mpSetZero(a, ndigits);
-	r = spBetterRand();
-	j = bits_per_digit;
-	for (i = 0; i < nbits; i++)
-	{
-		if (j <= 0)
-		{
-			r = spBetterRand();
-			j = bits_per_digit;
-		}
-		mpSetBit(a, ndigits, i, r & 0x1);
-		r >>= 1;
-		j--;
-	}
+    mpSetZero(a, ndigits);
+    r = spBetterRand();
+    j = bits_per_digit;
+    for (i = 0; i < nbits; i++) {
+        if (j <= 0) {
+            r = spBetterRand();
+            j = bits_per_digit;
+        }
+        mpSetBit(a, ndigits, i, r & 0x1);
+        r >>= 1;
+        j--;
+    }
 
-	return i;
+    return i;
 }
 
 /** Generate array of random octets (bytes) using internal RNG. 
 This function is in the correct form for BD_RANDFUNC.
 Seed is ignored here.
 */
-int mpRandomOctets(unsigned char *bytes, size_t nbytes, const unsigned char *seed, size_t seedlen)
-{
-	const int octets_per_digit = sizeof(DIGIT_T);
-	size_t i;
-	int j;
-	DIGIT_T r;
+int mpRandomOctets(unsigned char *bytes, size_t nbytes, const unsigned char *seed, size_t seedlen) {
+    const int octets_per_digit = sizeof(DIGIT_T);
+    size_t i;
+    int j;
+    DIGIT_T r;
 
-	r = spBetterRand();
-	j = octets_per_digit;
-	for (i = 0; i < nbytes; i++)
-	{
-		if (j <= 0)
-		{
-			r = spBetterRand();
-			j = octets_per_digit;
-		}
-		bytes[i] = r & 0xFF;
-		r >>= 8;
-		j--;
-	}
-	return (int)i;
+    r = spBetterRand();
+    j = octets_per_digit;
+    for (i = 0; i < nbytes; i++) {
+        if (j <= 0) {
+            r = spBetterRand();
+            j = octets_per_digit;
+        }
+        bytes[i] = r & 0xFF;
+        r >>= 8;
+        j--;
+    }
+    return (int) i;
 }
 
 /**********************/
@@ -134,13 +128,14 @@ THIS VARIANT:
 ******************************************************************************/
 
 #define KEY_WORDS 4
-static void encipher(uint32_t *const v,uint32_t *const w, const uint32_t *const k);
+
+static void encipher(uint32_t *const v, uint32_t *const w, const uint32_t *const k);
 
 /* CAUTION: We use a static structure to store our values in. */
 static struct {
-	int seeded;
-	uint32_t seed[2];
-	uint32_t key[KEY_WORDS];
+    int seeded;
+    uint32_t seed[2];
+    uint32_t key[KEY_WORDS];
 } m_generator;
 
 #if !(defined(ONLY_ANSI)) && (defined(_WIN32) || defined(WIN32))
@@ -154,10 +149,10 @@ static struct {
 #if defined(unix) || defined(__unix__) || defined(linux) || defined(__linux__)
 static void get_time64(uint32_t t[2])
 {
-	#include <sys/time.h>
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	memcpy(t, &tv, 2*sizeof(uint32_t));
+#include <sys/time.h>
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    memcpy(t, &tv, 2*sizeof(uint32_t));
 }
 #include <unistd.h>
 #define processid getpid
@@ -166,92 +161,91 @@ static void get_time64(uint32_t t[2])
 #include <windows.h>
 static void get_time64(uint32_t t[2])
 {
-	FILETIME ft;
-	GetSystemTimeAsFileTime (&ft);
-	t[0] = ft.dwHighDateTime;
-	t[1] = ft.dwLowDateTime;
+    FILETIME ft;
+    GetSystemTimeAsFileTime (&ft);
+    t[0] = ft.dwHighDateTime;
+    t[1] = ft.dwLowDateTime;
 }
 #define processid GetCurrentProcessId
 #else /* ANSI FALLBACK */
-static void get_time64(uint32_t t[2])
-{
-	/* Best we can do with strict ANSI */
-	/* [v2.2] added clock() as well as time() to improve precision.
-	 * OK, so this isn't actually the time, but it's an independent value accurate to
-	 * one millisecond, which is what we want.
-	 */
 
-	t[0] = (uint32_t)time(NULL);
-	t[1] = (uint32_t)clock();
+static void get_time64(uint32_t t[2]) {
+    /* Best we can do with strict ANSI */
+    /* [v2.2] added clock() as well as time() to improve precision.
+     * OK, so this isn't actually the time, but it's an independent value accurate to
+     * one millisecond, which is what we want.
+     */
+
+    t[0] = (uint32_t) time(NULL);
+    t[1] = (uint32_t) clock();
 }
-unsigned long processid(void)
-{ return 0; }
+
+unsigned long processid(void) { return 0; }
+
 #endif
 
 /* Given a 32-bit random seed, create a 64-bit seed S and 128-bit key K for the global generator */
-static void btrseed(uint32_t seed)
-{
-	int i;
-	uint32_t t[2];
+static void btrseed(uint32_t seed) {
+    int i;
+    uint32_t t[2];
 
-	/* Use plain old rand function to generate our global 64-bit seed S and initial 128-bit key K_0 */
-	srand(seed);
-	/* Only trust the lowest 8 bits from rand()... */
-	for (i = 0; i < 2; i++)	
-		m_generator.seed[i] = (rand()&0xFF)<<24|(rand()&0xFF)<<16|(rand()&0xFF)<<8|(rand()&0xFF);
-	for (i = 0; i < KEY_WORDS; i++)
-		m_generator.key[i] =  (rand()&0xFF)<<24|(rand()&0xFF)<<16|(rand()&0xFF)<<8|(rand()&0xFF);
+    /* Use plain old rand function to generate our global 64-bit seed S and initial 128-bit key K_0 */
+    srand(seed);
+    /* Only trust the lowest 8 bits from rand()... */
+    for (i = 0; i < 2; i++)
+        m_generator.seed[i] = (rand() & 0xFF) << 24 | (rand() & 0xFF) << 16 | (rand() & 0xFF) << 8 | (rand() & 0xFF);
+    for (i = 0; i < KEY_WORDS; i++)
+        m_generator.key[i] = (rand() & 0xFF) << 24 | (rand() & 0xFF) << 16 | (rand() & 0xFF) << 8 | (rand() & 0xFF);
 
-	/* Set flag so we only do this once */
-	m_generator.seeded = 1;
+    /* Set flag so we only do this once */
+    m_generator.seeded = 1;
 
-	/* [v2.4] Blend in the current 64-bit time and re-encrypt the key with itself */
-	/* Note that the `block` in E(block, key) is 64 bits, but the `key` is 128 bits */
+    /* [v2.4] Blend in the current 64-bit time and re-encrypt the key with itself */
+    /* Note that the `block` in E(block, key) is 64 bits, but the `key` is 128 bits */
 
-	/* T = E(time, K_0) -- encrypt 64-bit time using K_0 */
-	get_time64(t);
-	encipher(t, t, m_generator.key);
-	/* K_1[0..63] = E(T XOR K_0[0..63], K_0) 
-	   -- encrypt left 64 bits of K_0 using K_0 --> left 64 bits of K_1 
-	   -- right 64 bits of K_0 --> right 64 bits of K_1 */
-	m_generator.key[0] ^= t[0];
-	m_generator.key[1] ^= t[1];
-	encipher(&m_generator.key[0], &m_generator.key[0], m_generator.key);
-	/* K_2[64..127] = E(T XOR K_1[64..127], K_1) 
-	   -- encrypt right 64 bits of K_1 using K_1 --> right 64 bits of K_2 
-	   -- left 64 bits of K_! --> left 64 bits of K_2 */
-	m_generator.key[2] ^= t[0];
-	m_generator.key[3] ^= t[1];
-	encipher(&m_generator.key[2], &m_generator.key[2], m_generator.key);
-	/* Output global key K = K_2 */
+    /* T = E(time, K_0) -- encrypt 64-bit time using K_0 */
+    get_time64(t);
+    encipher(t, t, m_generator.key);
+    /* K_1[0..63] = E(T XOR K_0[0..63], K_0)
+       -- encrypt left 64 bits of K_0 using K_0 --> left 64 bits of K_1
+       -- right 64 bits of K_0 --> right 64 bits of K_1 */
+    m_generator.key[0] ^= t[0];
+    m_generator.key[1] ^= t[1];
+    encipher(&m_generator.key[0], &m_generator.key[0], m_generator.key);
+    /* K_2[64..127] = E(T XOR K_1[64..127], K_1)
+       -- encrypt right 64 bits of K_1 using K_1 --> right 64 bits of K_2
+       -- left 64 bits of K_! --> left 64 bits of K_2 */
+    m_generator.key[2] ^= t[0];
+    m_generator.key[3] ^= t[1];
+    encipher(&m_generator.key[2], &m_generator.key[2], m_generator.key);
+    /* Output global key K = K_2 */
 }
 
 static uint32_t btrrand(void)
 /* Returns one 32-bit word */
 {
-	uint32_t inter[2], x[2];
+    uint32_t inter[2], x[2];
 
-	/* Set seed if not already seeded */
-	if (!m_generator.seeded)
-	{	/* [v2.4] added process ID so processes launched at same time should give different values */
-		btrseed((uint32_t)time(NULL)<<16 ^ ((uint32_t)clock()<<8) ^ (uint32_t)processid());
-	}
+    /* Set seed if not already seeded */
+    if (!m_generator.seeded) {    /* [v2.4] added process ID so processes launched at same time should give different values */
+        btrseed((uint32_t) time(NULL) << 16 ^ ((uint32_t) clock() << 8) ^ (uint32_t) processid());
+    }
 
-	/* I = E(D, K) */
-	get_time64(inter);
-	encipher(inter, inter, m_generator.key);
+    /* I = E(D, K) */
+    get_time64(inter);
+    encipher(inter, inter, m_generator.key);
 
-	/* X = E(I XOR S, K) */
-	x[0] = inter[0] ^ m_generator.seed[0];
-	x[1] = inter[1] ^ m_generator.seed[1];
-	encipher(x, x, m_generator.key);
+    /* X = E(I XOR S, K) */
+    x[0] = inter[0] ^ m_generator.seed[0];
+    x[1] = inter[1] ^ m_generator.seed[1];
+    encipher(x, x, m_generator.key);
 
-	/* S' = E(X XOR I, K) */
-	inter[0] ^= x[0];
-	inter[1] ^= x[1];
-	encipher(inter, m_generator.seed, m_generator.key);
+    /* S' = E(X XOR I, K) */
+    inter[0] ^= x[0];
+    inter[1] ^= x[1];
+    encipher(inter, m_generator.seed, m_generator.key);
 
-	return x[0];
+    return x[0];
 }
 
 /************************************************
@@ -302,17 +296,16 @@ although impractical.
 
 ************************************************/
 
-static void encipher(uint32_t *const v,uint32_t *const w, const uint32_t *const k)
-{
-	register uint32_t y=v[0],z=v[1],sum=0,delta=0x9E3779B9,n=32;
+static void encipher(uint32_t *const v, uint32_t *const w, const uint32_t *const k) {
+    register uint32_t y = v[0], z = v[1], sum = 0, delta = 0x9E3779B9, n = 32;
 
-	while(n-->0)
-	{
-		y+= (((z<<4) ^ (z>>5)) + z) ^ (sum + k[sum & 3]);
-		sum += delta;
-		z+= (((y<<4) ^ (y>>5)) + y) ^ (sum + k[sum>>11 & 3]);
-	}
+    while (n-- > 0) {
+        y += (((z << 4) ^ (z >> 5)) + z) ^ (sum + k[sum & 3]);
+        sum += delta;
+        z += (((y << 4) ^ (y >> 5)) + y) ^ (sum + k[sum >> 11 & 3]);
+    }
 
-	w[0]=y; w[1]=z;
+    w[0] = y;
+    w[1] = z;
 }
 

@@ -94,7 +94,7 @@ typedef uint32_t bdigit_t;
    The USE_SPASM option takes precedence over USE_64WITH32.
 */
 
-#ifdef NO_ALLOCS 
+#ifdef NO_ALLOCS
 #error NO_ALLOCS is not permitted with bd functions
 #endif
 
@@ -106,9 +106,9 @@ Thanks to Ian Tree for the C++ fudge.
 */
 #define T BIGD
 #ifdef __cplusplus
-	typedef struct T2 *T;
+typedef struct T2 *T;
 #else
-	typedef struct T *T;
+typedef struct T *T;
 #endif
 
 #ifdef __cplusplus
@@ -241,14 +241,19 @@ int bdDecrement(BIGD a);
 
 /** Compute w = u + v without restrictions on overlap of bdAdd() */
 int bdAdd_s(BIGD w, BIGD u, BIGD v);
+
 /** Compute w = u - v without restrictions on overlap of bdSubtract() */
 int bdSubtract_s(BIGD w, BIGD u, BIGD v);
+
 /** Compute w = u * v without restrictions on overlap of bdMultiply() */
 int bdMultiply_s(BIGD w, BIGD u, BIGD v);
+
 /** Compute u div v without restrictions on overlap of bdDivide() */
 int bdDivide_s(BIGD q, BIGD r, BIGD u, BIGD v);
+
 /** Compute u mod v without restrictions on overlap of bdModulo() */
 int bdModulo_s(BIGD r, BIGD u, BIGD v);
+
 /** Compute s = x * x without restrictions on overlap of bdSquare() */
 int bdSquare_s(BIGD s, BIGD x);
 
@@ -506,8 +511,8 @@ void bdPrintDecimal(const char *prefix, BIGD b, const char *suffix);
 void bdPrintBits(const char *prefix, BIGD b, const char *suffix);
 
 /* Options for bdPrint */
-#define BD_PRINT_NL   0x1	/* append a newline after printing */
-#define BD_PRINT_TRIM 0x2	/* trim leading zero digits */
+#define BD_PRINT_NL   0x1    /* append a newline after printing */
+#define BD_PRINT_TRIM 0x2    /* trim leading zero digits */
 
 /** Print b in hex format to stdout
 @param[in] b Number to print
@@ -618,7 +623,7 @@ size_t bdSetRandTest(BIGD a, size_t ndigits);
 size_t bdQuickRandBits(BIGD a, size_t nbits);
 
 /** TYPEDEF for user-defined random byte generator function */
-typedef int (* BD_RANDFUNC)(unsigned char *buf, size_t nbytes, const unsigned char *seed, size_t seedlen);
+typedef int (*BD_RANDFUNC)(unsigned char *buf, size_t nbytes, const unsigned char *seed, size_t seedlen);
 
 /** Generate a random number nbits long using RandFunc
  *  @param[out] a To receive the result
@@ -626,8 +631,8 @@ typedef int (* BD_RANDFUNC)(unsigned char *buf, size_t nbytes, const unsigned ch
  *  @param [in] seed Optional seed to add extra entropy
  *  @param [in] seedlen Number of bytes in seed
  *  @param [in] RandFunc User function to generate random bytes */
-int bdRandomSeeded(BIGD a, size_t nbits, const unsigned char *seed, 
-	size_t seedlen, BD_RANDFUNC RandFunc);
+int bdRandomSeeded(BIGD a, size_t nbits, const unsigned char *seed,
+                   size_t seedlen, BD_RANDFUNC RandFunc);
 
 /** Generate a prime number
  *  @param[out] a To receive the result
@@ -636,25 +641,25 @@ int bdRandomSeeded(BIGD a, size_t nbits, const unsigned char *seed,
  *  @param [in] seed Optional seed to add extra entropy
  *  @param [in] seedlen Number of bytes in seed
  *  @param [in] RandFunc User function to generate random bytes */
-int bdGeneratePrime(BIGD a, size_t nbits, size_t ntests, const unsigned char *seed, 
-	size_t seedlen, BD_RANDFUNC RandFunc);
+int bdGeneratePrime(BIGD a, size_t nbits, size_t ntests, const unsigned char *seed,
+                    size_t seedlen, BD_RANDFUNC RandFunc);
 
 /****************/
 /* VERSION INFO */
 /****************/
 /** Returns version number = major*1000+minor*100+release*10+PP_OPTIONS */
 int bdVersion(void);
-	/* Returns version number = major*1000+minor*100+release*10+uses_asm(0|1)+uses_64(0|2) 
-		 E.g. Version 2.3.0 will return 230x where x denotes the preprocessor options
-		 x | USE_SPASM | USE_64WITH32 | NO_ALLOCS
-		 --+-----------+--------------+----------
-		 0 |    No     |      No      |    N/A
-		 1 |    Yes    |      No      |    N/A
-		 2 |    No     |      Yes     |    N/A
-		 3 |    Yes    |      Yes*    |    N/A
-		 --+-----------+--------------+----------
-		 * USE_SPASM will take precedence over USE_64WITH32.
-	 */
+/* Returns version number = major*1000+minor*100+release*10+uses_asm(0|1)+uses_64(0|2)
+     E.g. Version 2.3.0 will return 230x where x denotes the preprocessor options
+     x | USE_SPASM | USE_64WITH32 | NO_ALLOCS
+     --+-----------+--------------+----------
+     0 |    No     |      No      |    N/A
+     1 |    Yes    |      No      |    N/A
+     2 |    No     |      Yes     |    N/A
+     3 |    Yes    |      Yes*    |    N/A
+     --+-----------+--------------+----------
+     * USE_SPASM will take precedence over USE_64WITH32.
+ */
 
 /** Returns a pointer to a static string containing the time of compilation */
 const char *bdCompileTime(void);

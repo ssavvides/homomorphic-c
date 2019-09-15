@@ -1,86 +1,84 @@
 #include "elgamal-bd.h"
 #include "pk.h"
 
-void init_elgamal_bd(elg_bd_pk *pk, elg_bd_sk *sk) {
-	sk->n = bdNew();
-	sk->g = bdNew();
-	sk->h = bdNew();
-	sk->x = bdNew();
+void elgamal_bd_init(elg_bd_pk *pk, elg_bd_sk *sk) {
+    sk->n = bdNew();
+    sk->g = bdNew();
+    sk->h = bdNew();
+    sk->x = bdNew();
+    pk->n = bdNew();
+    pk->g = bdNew();
+    pk->h = bdNew();
 
-	pk->n = bdNew();
-	pk->g = bdNew();
-	pk->h = bdNew();
+    // n is a large prime
+    bdGeneratePrime(sk->n, DEFAULT_KEY_LEN / 2, 1, (const unsigned char *) "1", 1, bdRandomOctets);
+    do {
+        bdQuickRandBits(sk->x, DEFAULT_KEY_LEN);
+    } while (bdIsZero(sk->x));
 
-	// n is a large prime
-    bdGeneratePrime(sk->n, DEFAULT_KEY_LEN, 1, (const unsigned char*) "1", 1, bdRandomOctets);
+    // g is the generator
+    bdGeneratePrime(sk->g, DEFAULT_KEY_LEN / 2, 1, (const unsigned char *) "1", 1, bdRandomOctets);
 
-	do {
-		bdQuickRandBits(sk->x, DEFAULT_KEY_LEN);
-	} while (bdIsZero(sk->x));
+    // h = g^x (mod n)
+    bdModExp(sk->h, sk->g, sk->x, sk->n);
 
-	// g is the generator
-    bdGeneratePrime(sk->g, DEFAULT_KEY_LEN, 1, (const unsigned char*) "1", 1, bdRandomOctets);
+    bdSetEqual(pk->n, sk->n);
+    bdSetEqual(pk->g, sk->g);
+    bdSetEqual(pk->h, sk->h);
 
-	// h = g^x (mod n)
-	bdModExp(sk->h, sk->g, sk->x, sk->n);
+    // PRECOMPUTATION
+    BIGD y = bdNew();
 
-	bdSetEqual(pk->n, sk->n);
-	bdSetEqual(pk->g, sk->g);
-	bdSetEqual(pk->h, sk->h);
+    do {
+        bdQuickRandBits(y, DEFAULT_KEY_LEN);
+    } while (bdIsZero(y));
 
-	// PRECOMPUTATION
-	BIGD y = bdNew();
-
-	do {
-		bdQuickRandBits(y, DEFAULT_KEY_LEN);
-	} while (bdIsZero(y));
-
-	pk->sPre = bdNew();
-	pk->c1Pre = bdNew();
-	bdModExp(pk->sPre, pk->h, y, pk->n);
-	bdModExp(pk->c1Pre, pk->g, y, pk->n);
+    pk->sPre = bdNew();
+    pk->c1Pre = bdNew();
+    bdModExp(pk->sPre, pk->h, y, pk->n);
+    bdModExp(pk->c1Pre, pk->g, y, pk->n);
 }
 
-void encrypt_elgamal_bd(BIGD c1, BIGD c2, BIGD msg, elg_bd_pk *pk) {
+void elgamal_bd_encrypt(BIGD c1, BIGD c2, BIGD msg, elg_bd_pk *pk) {
 
-	BIGD y = bdNew();
-	BIGD s = bdNew();
+    BIGD y = bdNew();
+    BIGD s = bdNew();
 
-	do {
-		bdQuickRandBits(y, DEFAULT_KEY_LEN);
-	} while (bdIsZero(y));
+    do {
+        bdQuickRandBits(y, DEFAULT_KEY_LEN);
+    } while (bdIsZero(y));
 
-	// s = h^y (mod n)
-	bdModExp(s, pk->h, y, pk->n);
+    // s = h^y (mod n)
+    bdModExp(s, pk->h, y, pk->n);
 
-	// c1 = g^y (mod n)
-	bdModExp(c1, pk->g, y, pk->n);
+    // c1 = g^y (mod n)
+    bdModExp(c1, pk->g, y, pk->n);
 
-	// c2 = msg * s mod n
-	bdModMult(c2, msg, s, pk->n);
+    // c2 = msg * s mod n
+    bdModMult(c2, msg, s, pk->n);
 }
 
 /**
- * Pre-computation
- */
-void encrypt_pre_elgamal_bd(BIGD  c1, BIGD  c2, BIGD  msg, elg_bd_pk *pk) {
+* Pre-computation
+*/
+void elgamal_bd_encrypt_pre(BIGD c1, BIGD c2, BIGD msg, elg_bd_pk *pk) {
 
-	bdSetEqual(c1, pk->c1Pre);
+    bdSetEqual(c1, pk->c1Pre);
 
-	// c2 = msg * s mod n
-	bdModMult(c2, msg, pk->sPre, pk->n);
+    // c2 = msg * s mod n
+    bdModMult(c2, msg, pk->sPre, pk->n);
 }
 
-void decrypt_elgamal_bd(BIGD  msg, BIGD  c1, BIGD  c2, elg_bd_sk *sk) {
-	BIGD s = bdNew();
-	BIGD inv_s = bdNew();
+void elgamal_bd_decrypt(BIGD msg, BIGD c1, BIGD c2, elg_bd_sk *sk) {
+    BIGD s = bdNew();
+    BIGD inv_s = bdNew();
 
-	// s = c1^x
-	bdModExp(s, c1, sk->x, sk->n);
+    // s = c1^x
+    bdModExp(s, c1, sk->x, sk->n);
 
-	// inv_s = s^{-1}
-	bdModInv(inv_s, s, sk->n);
+    // inv_s = s^{-1}
+    bdModInv(inv_s, s, sk->n);
 
-	// msg = c2 inv_s
-	bdModMult(msg, c2, inv_s, sk->n);
+    // msg = c2 inv_s
+    bdModMult(msg, c2, inv_s, sk->n);
 }

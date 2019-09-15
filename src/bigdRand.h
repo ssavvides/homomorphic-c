@@ -56,7 +56,7 @@ size_t bdRandomBits(BIGD a, size_t nbits);
 /* Added in [v2.4] */
 /** Generate array of random octets (bytes) using internal RNG
  *  @remarks This function is in the correct form for BD_RANDFUNC. 
- */ 
+ */
 int bdRandomOctets(unsigned char *bytes, size_t nbytes, const unsigned char *seed, size_t seedlen);
 
 /** Generate a number at random from a uniform distribution in [0, n-1] */

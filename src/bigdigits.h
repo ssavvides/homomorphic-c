@@ -41,7 +41,7 @@ typedef uint16_t HALF_DIGIT_T;
 
 /* Sizes to match */
 #define MAX_DIGIT 0xFFFFFFFFUL
-#define MAX_HALF_DIGIT 0xFFFFUL	/* NB 'L' */
+#define MAX_HALF_DIGIT 0xFFFFUL    /* NB 'L' */
 #define BITS_PER_DIGIT 32
 #define HIBITMASK 0x80000000UL
 
@@ -54,7 +54,7 @@ typedef uint16_t HALF_DIGIT_T;
    -- ignored unless NO_ALLOCS is defined
    -- [v2.6] user may override MAX_FIXED_BIT_LENGTH with global definition
 	  e.g. /D "MAX_FIXED_BIT_LENGTH=640" or -D MAX_FIXED_BIT_LENGTH=640
-*/ 
+*/
 #ifdef NO_ALLOCS
 #ifndef MAX_FIXED_BIT_LENGTH
 #define MAX_FIXED_BIT_LENGTH 8192
@@ -85,7 +85,7 @@ extern "C" {
 #endif
 
 /* Forces linker to include copyright notice in executable */
-	volatile char *copyright_notice(void);
+volatile char *copyright_notice(void);
 /** @endcond */
 
 /*	
@@ -128,8 +128,8 @@ int mpMultiply(DIGIT_T w[], const DIGIT_T u[], const DIGIT_T v[], size_t ndigits
 @pre `q` and `r` must be independent of `u` and `v`. 
 @warning Trashes q and r first
 */
-int mpDivide(DIGIT_T q[], DIGIT_T r[], const DIGIT_T u[], 
-	size_t udigits, DIGIT_T v[], size_t vdigits);
+int mpDivide(DIGIT_T q[], DIGIT_T r[], const DIGIT_T u[],
+             size_t udigits, DIGIT_T v[], size_t vdigits);
 
 /** Computes remainder r = u mod v
 @param[out] r to receive divisor = u mod v, an array of size `vdigits`
@@ -190,9 +190,9 @@ int mpCompare_ct(const DIGIT_T a[], const DIGIT_T b[], size_t ndigits);
 int mpIsZero_ct(const DIGIT_T a[], size_t ndigits);
 
 /* Keep the faith for [v2.5] users - DEPRECATED in [v2.6] */
-#define mpEqual_q(a,b,n) mpEqual((a),(b),(n))
-#define mpCompare_q(a,b,n) mpCompare((a),(b),(n))
-#define mpIsZero_q(a,n) mpIsZero((a),(n))
+#define mpEqual_q(a, b, n) mpEqual((a),(b),(n))
+#define mpCompare_q(a, b, n) mpCompare((a),(b),(n))
+#define mpIsZero_q(a, n) mpIsZero((a),(n))
 
 
 /****************************/
@@ -418,6 +418,7 @@ size_t mpQuickRandBits(DIGIT_T a[], size_t ndigits, size_t nbits);
 
 /** Print in hex format with optional prefix and suffix strings */
 void mpPrintHex(const char *prefix, const DIGIT_T *a, size_t ndigits, const char *suffix);
+
 /** Print in decimal format with optional prefix and suffix strings */
 void mpPrintDecimal(const char *prefix, const DIGIT_T *a, size_t ndigits, const char *suffix);
 
@@ -430,13 +431,16 @@ void mpPrintBits(const char *prefix, DIGIT_T *a, size_t ndigits, const char *suf
 /* OLDER PRINT FUNCTIONS, ALL PRINTING IN HEX */
 /** Print all digits in hex incl leading zero digits */
 void mpPrint(const DIGIT_T *a, size_t ndigits);
+
 /** Print all digits in hex with newlines */
 void mpPrintNL(const DIGIT_T *a, size_t ndigits);
-/** Print in hex but trim leading zero digits 
+
+/** Print in hex but trim leading zero digits
 @deprecated Use mpPrintHex()
 */
 void mpPrintTrim(const DIGIT_T *a, size_t ndigits);
-/** Print in hex, trim leading zeroes, add newlines 
+
+/** Print in hex, trim leading zeroes, add newlines
 @deprecated Use mpPrintHex()
 */
 void mpPrintTrimNL(const DIGIT_T *a, size_t ndigits);
@@ -448,19 +452,24 @@ void mpPrintTrimNL(const DIGIT_T *a, size_t ndigits);
 /** Converts nbytes octets into big digit a of max size ndigits
 @returns actual number of digits set */
 size_t mpConvFromOctets(DIGIT_T a[], size_t ndigits, const unsigned char *c, size_t nbytes);
+
 /** Converts big digit a into string of octets, in big-endian order, padding to nbytes or truncating if necessary.
 @returns number of non-zero octets required. */
 size_t mpConvToOctets(const DIGIT_T a[], size_t ndigits, unsigned char *c, size_t nbytes);
+
 /** Converts a string in decimal format to a big digit.
 @returns actual number of (possibly zero) digits set. */
 size_t mpConvFromDecimal(DIGIT_T a[], size_t ndigits, const char *s);
+
 /** Converts big digit a into a string in decimal format, where s has size smax including the terminating zero.
 @returns number of chars required excluding leading zeroes. */
 size_t mpConvToDecimal(const DIGIT_T a[], size_t ndigits, char *s, size_t smax);
+
 /** Converts a string in hexadecimal format to a big digit.
 @return actual number of (possibly zero) digits set. */
 size_t mpConvFromHex(DIGIT_T a[], size_t ndigits, const char *s);
-/** Converts big digit a into a string in hexadecimal format, 
+
+/** Converts big digit a into a string in hexadecimal format,
    where s has size smax including the terminating zero.
 @return number of chars required excluding leading zeroes. */
 size_t mpConvToHex(const DIGIT_T a[], size_t ndigits, char *s, size_t smax);
@@ -532,21 +541,21 @@ void mpPrintDecimalSigned(const char *prefix, DIGIT_T *a, size_t ndigits, const 
 /****************/
 /** Returns version number = major*1000+minor*100+release*10+PP_OPTIONS */
 int mpVersion(void);
-	/* Version number = major*1000+minor*100+release*10+uses_asm(0|1)+uses_64(0|2)+uses_noalloc(0|5) 
-		 E.g. Version 2.3.0 will return 230x where x denotes the preprocessor options
-		 x | USE_SPASM | USE_64WITH32 | NO_ALLOCS
-		 ----------------------------------------
-		 0      No            No           No
-		 1      Yes           No           No
-		 2      No            Yes          No
-		 3      Yes           Yes*         No
-		 5      No            No           Yes
-		 6      Yes           No           Yes
-		 7      No            Yes          Yes
-		 8      Yes           Yes*         Yes
-		 ----------------------------------------
-		 * USE_SPASM will take precedence over USE_64WITH32.
-	 */
+/* Version number = major*1000+minor*100+release*10+uses_asm(0|1)+uses_64(0|2)+uses_noalloc(0|5)
+     E.g. Version 2.3.0 will return 230x where x denotes the preprocessor options
+     x | USE_SPASM | USE_64WITH32 | NO_ALLOCS
+     ----------------------------------------
+     0      No            No           No
+     1      Yes           No           No
+     2      No            Yes          No
+     3      Yes           Yes*         No
+     5      No            No           Yes
+     6      Yes           No           Yes
+     7      No            Yes          Yes
+     8      Yes           Yes*         Yes
+     ----------------------------------------
+     * USE_SPASM will take precedence over USE_64WITH32.
+ */
 
 /** Returns a pointer to a static string containing the time of compilation */
 const char *mpCompileTime(void);
@@ -557,9 +566,13 @@ const char *mpCompileTime(void);
 /*************************************************************/
 /* [v2.2] added option to avoid memory allocation if NO_ALLOCS is defined */
 #ifndef NO_ALLOCS
+
 DIGIT_T *mpAlloc(size_t ndigits);
+
 void mpFree(DIGIT_T **p);
+
 #endif
+
 void mpFail(char *msg);
 
 /* Clean up by zeroising and freeing allocated memory */
@@ -574,4 +587,4 @@ void mpFail(char *msg);
 }
 #endif
 
-#endif	/* BIGDIGITS_H_ */
+#endif    /* BIGDIGITS_H_ */

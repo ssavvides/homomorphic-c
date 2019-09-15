@@ -33,34 +33,34 @@ You can override by defining HAVE_C99INCLUDES or HAVE_SYS_TYPES.
 #ifndef EXACT_INTS_DEFINED_
 #define EXACT_INTS_DEFINED_ 1
 #ifndef HAVE_C99INCLUDES
-	#if (__STDC_VERSION >= 199901L) || defined(linux) || defined(__linux__) || defined(__APPLE__)
-	#define HAVE_C99INCLUDES
-	#endif
+#if (__STDC_VERSION >= 199901L) || defined(linux) || defined(__linux__) || defined(__APPLE__)
+#define HAVE_C99INCLUDES
+#endif
 #endif
 #ifndef HAVE_SYS_TYPES
-	#if defined(unix) || defined(__unix__)
-	#define HAVE_SYS_TYPES
-	#endif
+#if defined(unix) || defined(__unix__)
+#define HAVE_SYS_TYPES
+#endif
 #endif
 #ifdef HAVE_C99INCLUDES
-	#include <stdint.h>
+#include <stdint.h>
 #elif defined(HAVE_SYS_TYPES)
-	#include <sys/types.h>
-#else 
-	#define uint32_t unsigned long 
-	#define uint16_t unsigned short
-	#define uint8_t unsigned char
-#endif	/* HAVE_C99INCLUDES */
-#endif	/* EXACT_INTS_DEFINED_ */
+#include <sys/types.h>
+#else
+#define uint32_t unsigned long
+#define uint16_t unsigned short
+#define uint8_t unsigned char
+#endif    /* HAVE_C99INCLUDES */
+#endif    /* EXACT_INTS_DEFINED_ */
 
 /* Macros for format specifiers 
 -- change to "u", "x" and "X" if necessary */
 #ifdef HAVE_C99INCLUDES
-	#include <inttypes.h>
-#else 
-	#define PRIu32 "lu" 
-	#define PRIx32 "lx" 
-	#define PRIX32 "lX" 
+#include <inttypes.h>
+#else
+#define PRIu32 "lu"
+#define PRIx32 "lx"
+#define PRIX32 "lX"
 #endif
 /* We define our own 
 -- Example: ``printf("%" PRIxBIGD "\n", d);`` */
