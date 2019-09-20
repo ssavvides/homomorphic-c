@@ -405,21 +405,21 @@ void time_paillier_gmp() {
 }
 
 int main(int argc, char **argv) {
-//    time_aes();
-//    printf("\n");
-//    time_aes_ssl();
-//    printf("\n");
-//    time_elgamal_bd();
-//    printf("\n");
-//    time_elgamal_bn();
-//    printf("\n");
-//    time_elgamal_gmp();
-//    printf("\n");
+   time_aes();
+   printf("\n");
+   time_aes_ssl();
+   printf("\n");
+   time_elgamal_bd();
+   printf("\n");
+   time_elgamal_bn();
+   printf("\n");
+   time_elgamal_gmp();
+   printf("\n");
     time_paillier_bd();
-//    printf("\n");
-//    time_paillier_bn();
-//    printf("\n");
-//    time_paillier_gmp();
-//    printf("\n");
-//    exit(EXIT_SUCCESS);
+   printf("\n");
+   time_paillier_bn();
+   printf("\n");
+   time_paillier_gmp();
+   printf("\n");
+   exit(EXIT_SUCCESS);
 }
