@@ -17,11 +17,11 @@ double time_millis() {
 }
 
 void print_micros(const char *message, const double micros) {
-    printf("%s: %.2f us\n", message, micros);
+    printf("%s: %.4f us\n", message, micros);
 }
 
 void print_millis(const char *message, const double millis) {
-    printf("%s: %.2f ms\n", message, millis);
+    printf("%s: %.4f ms\n", message, millis);
 }
 
 // NB: takes micros as input but prints in millis

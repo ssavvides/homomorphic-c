@@ -104,7 +104,7 @@ void elgamal_bn_encrypt_pre(BIGNUM *c1, BIGNUM *c2, BIGNUM *msg, elg_pk *pk, BN_
 
     BN_CTX_start(ctx);
 
-    *c1 = *BN_dup(c1Pre);
+    BN_copy(c1, c1Pre);
 
     // c2 = msg * s mod n
     BN_mod_mul(c2, msg, sPre, pk->n, ctx);

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -I/usr/include -Wall -pedantic -Wno-unused-function \
 	-Wno-deprecated-declarations -std=gnu11
-LDFLAGS = -lssl -lcrypto -lgmp
+LDFLAGS = -lm -lssl -lcrypto -lgmp
 DEPS = time.h pk.h
 OBJ = 	gmp-utils.o \
 		bigd.o bigdRand.o bigdigits.o bigdigitsRand.o \
