@@ -24,10 +24,10 @@ typedef struct {
 
 void elgamal_bd_init(elg_bd_pk *pk, elg_bd_sk *sk);
 
-void elgamal_bd_encrypt(BIGD c1, BIGD c2, BIGD msg, elg_bd_pk *pk);
+void elgamal_bd_encrypt(BIGD c1, BIGD c2, int msg, elg_bd_pk *pk);
 
-void elgamal_bd_encrypt_pre(BIGD c1, BIGD c2, BIGD msg, elg_bd_pk *pk);
+void elgamal_bd_encrypt_pre(BIGD c1, BIGD c2, int msg, elg_bd_pk *pk);
 
-void elgamal_bd_decrypt(BIGD msg, BIGD c1, BIGD c2, elg_bd_sk *sk);
+void elgamal_bd_decrypt(long* msg, BIGD c1, BIGD c2, elg_bd_sk *sk);
 
 #endif

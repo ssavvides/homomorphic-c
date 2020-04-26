@@ -65,218 +65,170 @@ void test_aes_ssl() {
     }
 }
 
+void test_decryption(int ptxt, int decr) {
+    if (ptxt != decr) {
+        printf("ERROR!\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 void test_elgamal_bd() {
-    char str[10];
     elg_bd_pk pubKey;
     elg_bd_sk privKey;
     elgamal_bd_init(&pubKey, &privKey);
-    BIGD ptxt = bdNew();
     BIGD c1 = bdNew();
     BIGD c2 = bdNew();
-    BIGD decr = bdNew();
+    long decr;
 
+    printf("ELGAMAL-BD: ");
     for (int i = 1; i < 5; i++) {
-        sprintf(str, "%d", i);
-        bdConvFromDecimal(ptxt, str);
-
-        printf("%d\n", i);
-
-        elgamal_bd_encrypt(c1, c2, ptxt, &pubKey);
-        elgamal_bd_decrypt(decr, c1, c2, &privKey);
-
-        if (bdCompare(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000; // bd library does not handle negative numbers
+        elgamal_bd_encrypt(c1, c2, r, &pubKey);
+        elgamal_bd_decrypt(&decr, c1, c2, &privKey);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-BD: SUCCESS!\n");
+    printf("SUCCESS!\n");
 
+    printf("ELGAMAL-BD (PRE): ");
     for (int i = 1; i < 5; i++) {
-        sprintf(str, "%d", i);
-        bdConvFromDecimal(ptxt, str);
-
-        elgamal_bd_encrypt_pre(c1, c2, ptxt, &pubKey);
-        elgamal_bd_decrypt(decr, c1, c2, &privKey);
-
-        if (bdCompare(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000;
+        elgamal_bd_encrypt_pre(c1, c2, r, &pubKey);
+        elgamal_bd_decrypt(&decr, c1, c2, &privKey);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-BD (PRE): SUCCESS!\n");
+    printf("SUCCESS!\n");
 }
 
 void test_elgamal_bn() {
     BN_CTX *ctx = BN_CTX_new();
-    char str[10];
     elg_pk pubKey;
     elg_sk privKey;
     elgamal_bn_init(&pubKey, &privKey, ctx);
-    BIGNUM *ptxt = BN_CTX_get(ctx);
+    long decr;
+
     BIGNUM *c1 = BN_CTX_get(ctx);
     BIGNUM *c2 = BN_CTX_get(ctx);
-    BIGNUM *decr = BN_CTX_get(ctx);
 
+    printf("ELGAMAL-BN: ");
     for (int i = -100; i < 100; i++) {
-        sprintf(str, "%d", i);
-        BN_dec2bn(&ptxt, str);
-        elgamal_bn_encrypt(c1, c2, ptxt, &pubKey, ctx);
-        elgamal_bn_decrypt(decr, c1, c2, &privKey, ctx);
-        if (BN_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        elgamal_bn_encrypt(c1, c2, r, &pubKey, ctx);
+        elgamal_bn_decrypt(&decr, c1, c2, &privKey, ctx);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-BN: SUCCESS!\n");
+    printf("SUCCESS!\n");
 
+    printf("ELGAMAL-BN (PRE): ");
     for (int i = -100; i < 100; i++) {
-        sprintf(str, "%d", i);
-        BN_dec2bn(&ptxt, str);
-        elgamal_bn_encrypt_pre(c1, c2, ptxt, &pubKey, ctx);
-        elgamal_bn_decrypt(decr, c1, c2, &privKey, ctx);
-        if (BN_cmp(decr, ptxt) != 0) {
-            printf("Pre-computation Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        elgamal_bn_encrypt_pre(c1, c2, r, &pubKey, ctx);
+        elgamal_bn_decrypt(&decr, c1, c2, &privKey, ctx);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-BN (PRE): SUCCESS!\n");
+    printf("SUCCESS!\n");
 }
 
 void test_elgamal_gmp() {
     elg_gmp_pk pk;
     elg_gmp_sk sk;
     elgamal_gmp_init(&pk, &sk);
-    mpz_t ptxt;
-    mpz_init(ptxt);
     mpz_t c1;
     mpz_init(c1);
     mpz_t c2;
     mpz_init(c2);
-    mpz_t decr;
-    mpz_init(decr);
+    long decr;
 
+    printf("ELGAMAL-GMP: ");
     for (int i = -100; i < 100; i++) {
-        mpz_set_si(ptxt, i);
-        elgamal_gmp_encrypt(c1, c2, ptxt, &pk);
-        elgamal_gmp_decrypt(decr, c1, c2, &sk);
-        if (mpz_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        elgamal_gmp_encrypt(c1, c2, r, &pk);
+        elgamal_gmp_decrypt(&decr, c1, c2, &sk);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-GMP: SUCCESS!\n");
+    printf("SUCCESS!\n");
 
+    printf("ELGAMAL-GMP (PRE): ");
     for (int i = -100; i < 100; i++) {
-        mpz_set_si(ptxt, i);
-        elgamal_gmp_encrypt_pre(c1, c2, ptxt, &pk);
-        elgamal_gmp_decrypt(decr, c1, c2, &sk);
-        if (mpz_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        elgamal_gmp_encrypt_pre(c1, c2, r, &pk);
+        elgamal_gmp_decrypt(&decr, c1, c2, &sk);
+        test_decryption(r, decr);
     }
-    printf("ELGAMAL-GMP (PRE): SUCCESS!\n");
+    printf("SUCCESS!\n");
 }
 
 void test_paillier_bd() {
-    char str[10];
     paillier_bd_pk pubKey;
     paillier_bd_sk privKey;
     paillier_bd_init(&pubKey, &privKey);
-    BIGD ptxt = bdNew();
     BIGD ctxt = bdNew();
-    BIGD decr = bdNew();
+    long decr;
 
+    printf("PAILLIER-BD: ");
     for (int i = 1; i < 5; i++) {
-        sprintf(str, "%d", i);
-        bdConvFromDecimal(ptxt, str);
-        paillier_bd_encrypt(ctxt, ptxt, &pubKey);
-        paillier_bd_decrypt(decr, ctxt, &privKey);
-        if (bdCompare(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000;
+        paillier_bd_encrypt(ctxt, r, &pubKey);
+        paillier_bd_decrypt(&decr, ctxt, &privKey);
+        test_decryption(r, decr);
     }
-    printf("Paillier-BD: SUCCESS!\n");
+    printf("SUCCESS!\n");
 
+    printf("PAILLIER-BD (PRE): ");
     for (int i = 1; i < 5; i++) {
-        sprintf(str, "%d", i);
-        bdConvFromDecimal(ptxt, str);
-        paillier_bd_encrypt_pre(ctxt, ptxt, &pubKey);
-        paillier_bd_decrypt(decr, ctxt, &privKey);
-        if (bdCompare(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000;
+        paillier_bd_encrypt_pre(ctxt, r, &pubKey);
+        paillier_bd_decrypt(&decr, ctxt, &privKey);
+        test_decryption(r, decr);
     }
-    printf("Paillier-BD (PRE): SUCCESS!\n");
+    printf("SUCCESS!\n");
 }
 
 void test_paillier_bn() {
-    char str[10];
     BN_CTX *ctx = BN_CTX_new();
     paillier_bn_pk pubKey;
     paillier_bn_sk privKey;
     paillier_bn_init(&pubKey, &privKey, ctx);
-    BIGNUM *ptxt = BN_CTX_get(ctx);
     BIGNUM *ctxt = BN_CTX_get(ctx);
-    BIGNUM *decr = BN_CTX_get(ctx);
+    long decr;
 
     for (int i = -100; i < 100; i++) {
-        sprintf(str, "%d", i);
-        BN_dec2bn(&ptxt, str);
-        paillier_bn_encrypt(ctxt, ptxt, &pubKey, ctx);
-        paillier_bn_decrypt(decr, ctxt, &privKey, ctx);
-        if (BN_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        paillier_bn_encrypt(ctxt, r, &pubKey, ctx);
+        paillier_bn_decrypt(&decr, ctxt, &privKey, ctx);
+        test_decryption(r, decr);
     }
-    printf("Paillier-BN: SUCCESS!\n");
+    printf("PAILLIER-BN: SUCCESS!\n");
 
     for (int i = -100; i < 100; i++) {
-        sprintf(str, "%d", i);
-        BN_dec2bn(&ptxt, str);
-        paillier_bn_encrypt_pre(ctxt, ptxt, &pubKey, ctx);
-        paillier_bn_decrypt(decr, ctxt, &privKey, ctx);
-        if (BN_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        paillier_bn_encrypt_pre(ctxt, r, &pubKey, ctx);
+        paillier_bn_decrypt_crt(&decr, ctxt, &privKey, ctx);
+        test_decryption(r, decr);
     }
-    printf("Paillier-BN (PRE): SUCCESS!\n");
+    printf("PAILLIER-BN (PRE): SUCCESS!\n");
 }
 
 void test_paillier_gmp() {
     paillier_gmp_pk pk;
     paillier_gmp_sk sk;
     paillier_gmp_init(&pk, &sk);
-    mpz_t ptxt;
-    mpz_init(ptxt);
     mpz_t ctxt;
     mpz_init(ctxt);
-    mpz_t decr;
-    mpz_init(decr);
+    long decr;
 
     for (int i = -100; i < 100; i++) {
-        mpz_set_si(ptxt, i);
-        paillier_gmp_encrypt(ctxt, ptxt, &pk);
-        paillier_gmp_decrypt(decr, ctxt, &sk);
-        if (mpz_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        paillier_gmp_encrypt(ctxt, r, &pk);
+        paillier_gmp_decrypt(&decr, ctxt, &sk);
+        test_decryption(r, decr);
     }
     printf("PAILLIER-GMP: SUCCESS!\n");
 
     for (int i = -100; i < 100; i++) {
-        mpz_set_si(ptxt, i);
-        paillier_gmp_encrypt_pre(ctxt, ptxt, &pk);
-        paillier_gmp_decrypt(decr, ctxt, &sk);
-        if (mpz_cmp(decr, ptxt) != 0) {
-            printf("Decryption ERROR!\n");
-            exit(EXIT_FAILURE);
-        }
+        int r = rand() % 1000 - 500;
+        paillier_gmp_encrypt_pre(ctxt, r, &pk);
+        paillier_gmp_decrypt_crt(&decr, ctxt, &sk);
+        test_decryption(r, decr);
     }
     printf("PAILLIER-GMP (PRE): SUCCESS!\n");
 }

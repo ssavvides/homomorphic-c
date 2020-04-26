@@ -1,39 +1,6 @@
-#include "paillier-bd.h"
 #include "pk.h"
-
-static void L_bd(BIGD res, const BIGD u, const BIGD n) {
-    BIGD u_cp = bdNew();
-    bdShortSub(u_cp, u, 1);
-    BIGD r = bdNew();
-    bdDivide(res, r, u_cp, n);
-}
-
-void crt_exponentiation_bd(BIGD result, const BIGD base,
-                           const BIGD exp_p, const BIGD exp_q, const BIGD pinvq, const BIGD p, const BIGD q) {
-    // compute exponentiation modulo p
-    BIGD result_p = bdNew();
-    bdModulo(result_p, base, p);
-    bdModExp(result_p, result_p, exp_p, p);
-
-    // compute exponentiation modulo q
-    BIGD result_q = bdNew();
-    bdModulo(result_q, base, q);
-    bdModExp(result_q, result_q, exp_q, q);
-
-    // recombination
-
-    BIGD pq = bdNew();
-    bdMultiply(pq, p, q);
-    // BD does not handle negative
-    if (bdCompare(result_p, result_q) > 0)
-        bdAdd_s(result_q, result_q, pq);
-    bdSubtract(result, result_q, result_p);
-    bdMultiply_s(result, result, p);
-    bdMultiply_s(result, result, pinvq);
-    bdAdd_s(result, result, result_p);
-
-    bdModulo(result, result, pq);
-}
+#include "bd-ops.h"
+#include "paillier-bd.h"
 
 void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey) {
     BIGD two = bdNew();
@@ -48,21 +15,17 @@ void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey) {
     BIGD pqMult = bdNew(); // helper
 
     // loop until gcd(pq, (p-1)(q-1)) = 1
+    privKey->p2 = bdNew();
+    privKey->q2 = bdNew();
+    privKey->p2invq2 = bdNew();
     do {
         // generate p and q
-        bdGeneratePrime(p, DEFAULT_KEY_LEN / 2, 2, (const unsigned char *) "1", 1, bdRandomOctets);
-        bdGeneratePrime(q, DEFAULT_KEY_LEN / 2, 2, (const unsigned char *) "1", 1, bdRandomOctets);
+        bd_prime(p, DEFAULT_KEY_LEN / 2);
+        bd_prime(q, DEFAULT_KEY_LEN / 2);
 
-        // 2. Compute n = pq
         bdMultiply(n, p, q);
-
-        privKey->p2 = bdNew();
         bdMultiply_s(privKey->p2, p, p);
-
-        privKey->q2 = bdNew();
         bdMultiply_s(privKey->q2, q, q);
-
-        privKey->p2invq2 = bdNew();
         bdModInv(privKey->p2invq2, privKey->p2, privKey->q2);
 
         // p-1, q-1
@@ -92,14 +55,13 @@ void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey) {
 
     int res = 0;
     do {
-
         // set g = n+1
         bdShortAdd(g, n, 1);
 
         // Ensure n divides the order of g
         bdModExp(tmp, g, lamda, n2);
 
-        L_bd(tmp, tmp, n);
+        bd_L(tmp, tmp, n);
 
         res = bdModInv(mu, tmp, n);
     } while (res != 0);
@@ -117,15 +79,24 @@ void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey) {
 
     // PRECOMPUTATION FOR ENCRYPTION: Select random r where r E Zn*
     BIGD rand = bdNew();
-    do {
-        bdQuickRandBits(rand, DEFAULT_KEY_LEN);
-    } while (bdIsZero(rand));
+    bd_rand(rand, DEFAULT_KEY_LEN, false);
 
     pubKey->tmp2Pre = bdNew();
     bdModExp(pubKey->tmp2Pre, rand, pubKey->n, pubKey->n2);
+
+    bdFree(&two);
+    bdFree(&p);
+    bdFree(&q);
+    bdFree(&tmp);
+    bdFree(&pqMult);
+    bdFree(&gcd);
+    bdFree(&rand);
 }
 
-void paillier_bd_encrypt(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *pubKey) {
+void paillier_bd_encrypt(BIGD ctxt, int msg, const paillier_bd_pk *pubKey) {
+
+    BIGD ptxt = bdNew();
+    int_to_bd(ptxt, msg);
 
     // OPT: g = n+1
     BIGD tmp1 = bdNew();
@@ -133,16 +104,24 @@ void paillier_bd_encrypt(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *pubKe
     bdShortAdd(tmp1, tmp1, 1);
 
     // generate random number
-    BIGD randBN = bdNew();
-    bdQuickRandBits(randBN, DEFAULT_KEY_LEN);
+    BIGD rand = bdNew();
+    bd_rand(rand, DEFAULT_KEY_LEN, true);
 
     BIGD tmp2 = bdNew();
-    bdModExp(tmp2, randBN, pubKey->n, pubKey->n2);
+    bdModExp(tmp2, rand, pubKey->n, pubKey->n2);
 
     bdModMult(ctxt, tmp1, tmp2, pubKey->n2);
+
+    bdFree(&tmp1);
+    bdFree(&tmp2);
+    bdFree(&rand);
+    bdFree(&ptxt);
 }
 
-void paillier_bd_encrypt_pre(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *pubKey) {
+void paillier_bd_encrypt_pre(BIGD ctxt, int msg, const paillier_bd_pk *pubKey) {
+
+    BIGD ptxt = bdNew();
+    int_to_bd(ptxt, msg);
 
     BIGD tmp1 = bdNew();
     bdMultiply(tmp1, ptxt, pubKey->n);
@@ -150,24 +129,45 @@ void paillier_bd_encrypt_pre(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *p
 
     // set ciphertext
     bdModMult(ctxt, tmp1, pubKey->tmp2Pre, pubKey->n2);
+
+    bdFree(&tmp1);
+    bdFree(&ptxt);
 }
 
-void paillier_bd_decrypt(BIGD ptxt, const BIGD ctxt, const paillier_bd_sk *key) {
+void paillier_bd_decrypt(long* msg, const BIGD ctxt, const paillier_bd_sk *key) {
     // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
     BIGD tmp = bdNew();
     bdModExp(tmp, ctxt, key->lamda, key->n2);
     BIGD u_cp = bdNew();
     bdShortAdd(u_cp, tmp, 1);
+
     BIGD res = bdNew();
     BIGD r = bdNew();
     bdDivide(res, r, u_cp, key->n);
+
+    BIGD ptxt = bdNew();
     bdModMult(ptxt, res, key->mu, key->n);
+
+    bd_to_long(msg, ptxt);
+
+    bdFree(&tmp);
+    bdFree(&u_cp);
+    bdFree(&res);
+    bdFree(&r);
+    bdFree(&ptxt);
 }
 
-void paillier_bd_decrypt_crt(BIGD ptxt, const BIGD ctxt, const paillier_bd_sk *key) {
+void paillier_bd_decrypt_crt(long* msg, const BIGD ctxt, const paillier_bd_sk *key) {
     // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
     BIGD tmp = bdNew();
-    crt_exponentiation_bd(tmp, ctxt, key->lamda, key->lamda, key->p2invq2, key->p2, key->q2);
-    L_bd(tmp, tmp, key->n);
+    bd_crt_exponentiation(tmp, ctxt, key->lamda, key->lamda, key->p2invq2, key->p2, key->q2);
+    bd_L(tmp, tmp, key->n);
+
+    BIGD ptxt = bdNew();
     bdModMult(ptxt, tmp, key->mu, key->n);
+
+    bd_to_long(msg, ptxt);
+
+    bdFree(&tmp);
+    bdFree(&ptxt);
 }

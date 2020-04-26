@@ -1,20 +1,23 @@
 #include "gmp-utils.h"
 
-void gen_prime(mpz_t prime, gmp_randstate_t seed, mp_bitcnt_t len) {
+void gmp_prime(mpz_t prime, gmp_randstate_t seed, mp_bitcnt_t len) {
     mpz_t rnd;
     mpz_init(rnd);
-
     mpz_urandomb(rnd, seed, len);
-
-    //set most significant bit to 1
     mpz_setbit(rnd, len - 1);
-    //look for next prime
     mpz_nextprime(prime, rnd);
-
     mpz_clear(rnd);
 }
 
-int crt_exponentiation(mpz_t result, const mpz_t base, const mpz_t exp_p, const mpz_t exp_q,
+void gmp_rand(mpz_t rnd, gmp_randstate_t seed, const mpz_t range, bool can_be_zero) {
+    do {
+        mpz_urandomm(rnd, seed, range);
+        if (can_be_zero)
+            break;
+    } while (mpz_cmp_si(rnd, 0) == 0);
+}
+
+int gmp_crt_exponentiation(mpz_t result, const mpz_t base, const mpz_t exp_p, const mpz_t exp_q,
                        const mpz_t pinvq, const mpz_t p, const mpz_t q) {
     //compute exponentiation modulo p
     mpz_t result_p;
@@ -42,12 +45,12 @@ int crt_exponentiation(mpz_t result, const mpz_t base, const mpz_t exp_p, const 
     return 0;
 }
 
-void L(mpz_t res, const mpz_t u, const mpz_t n) {
+void gmp_L(mpz_t res, const mpz_t u, const mpz_t n) {
     mpz_sub_ui(res, u, 1);
     mpz_div(res, res, n);
 }
 
-void L2(mpz_t result, const mpz_t input, const mpz_t ninv, mpz_t mask) {
+void gmp_L2(mpz_t result, const mpz_t input, const mpz_t ninv, mpz_t mask) {
     mpz_sub_ui(result, input, 1);
     mpz_mul(result, result, ninv);
     mpz_and(result, result, mask);

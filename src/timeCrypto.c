@@ -105,31 +105,27 @@ void time_elgamal_bd() {
     unsigned long time_enc[N];
     unsigned long time_enc2[N];
     unsigned long time_dec[N];
+    long decr;
 
-    BIGD ptxt = bdNew();
     BIGD c1 = bdNew();
     BIGD c2 = bdNew();
-    BIGD decr = bdNew();
-    char str[10];
     for (int i = 0; i < N + W; i++) {
-        int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        bdConvFromDecimal(ptxt, str);
+        int r = rand() % 1000;
 
         start = time_micros();
-        elgamal_bd_encrypt(c1, c2, ptxt, &pubKey);
+        elgamal_bd_encrypt(c1, c2, r, &pubKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_bd_encrypt_pre(c1, c2, ptxt, &pubKey);
+        elgamal_bd_encrypt_pre(c1, c2, r, &pubKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_bd_decrypt(decr, c1, c2, &privKey);
+        elgamal_bd_decrypt(&decr, c1, c2, &privKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -146,15 +142,13 @@ void time_elgamal_bd() {
 }
 
 void time_elgamal_bn() {
-    char str[10];
     BN_CTX *ctx = BN_CTX_new();
-    BIGNUM *ptxt = BN_CTX_get(ctx);
     BIGNUM *c1 = BN_CTX_get(ctx);
     BIGNUM *c2 = BN_CTX_get(ctx);
-    BIGNUM *decr = BN_CTX_get(ctx);
     elg_pk pubKey;
     elg_sk privKey;
     elgamal_bn_init(&pubKey, &privKey, ctx);
+    long decr;
 
     int N = 1000;
     int W = 100;
@@ -166,23 +160,21 @@ void time_elgamal_bn() {
 
     for (int i = 0; i < N + W; i++) {
         int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        BN_dec2bn(&ptxt, str);
 
         start = time_micros();
-        elgamal_bn_encrypt(c1, c2, ptxt, &pubKey, ctx);
+        elgamal_bn_encrypt(c1, c2, r, &pubKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_bn_encrypt_pre(c1, c2, ptxt, &pubKey, ctx);
+        elgamal_bn_encrypt_pre(c1, c2, r, &pubKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_bn_decrypt(decr, c1, c2, &privKey, ctx);
+        elgamal_bn_decrypt(&decr, c1, c2, &privKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -201,15 +193,11 @@ void time_elgamal_gmp() {
     elg_gmp_pk pk;
     elg_gmp_sk sk;
     elgamal_gmp_init(&pk, &sk);
-    char str[10];
-    mpz_t ptxt;
-    mpz_init(ptxt);
     mpz_t c1;
     mpz_init(c1);
     mpz_t c2;
     mpz_init(c2);
-    mpz_t decr;
-    mpz_init(decr);
+    long decr;
 
     int N = 1000;
     int W = 100;
@@ -220,23 +208,21 @@ void time_elgamal_gmp() {
     unsigned long time_dec[N];
     for (int i = 0; i < N + W; i++) {
         int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        mpz_set_si(ptxt, i);
 
         start = time_micros();
-        elgamal_gmp_encrypt(c1, c2, ptxt, &pk);
+        elgamal_gmp_encrypt(c1, c2, r, &pk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_gmp_encrypt_pre(c1, c2, ptxt, &pk);
+        elgamal_gmp_encrypt_pre(c1, c2, r, &pk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        elgamal_gmp_decrypt(decr, c1, c2, &sk);
+        elgamal_gmp_decrypt(&decr, c1, c2, &sk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -252,13 +238,11 @@ void time_elgamal_gmp() {
 }
 
 void time_paillier_bd() {
-    char str[10];
     paillier_bd_pk pubKey;
     paillier_bd_sk privKey;
     paillier_bd_init(&pubKey, &privKey);
-    BIGD ptxt = bdNew();
     BIGD ctxt = bdNew();
-    BIGD decr = bdNew();
+    long decr;
 
     int N = 20;
     int W = 2;
@@ -268,24 +252,22 @@ void time_paillier_bd() {
     unsigned long time_enc2[N];
     unsigned long time_dec[N];
     for (int i = 0; i < N + W; i++) {
-        int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        bdConvFromDecimal(ptxt, str);
+        int r = rand() % 1000;
 
         start = time_micros();
-        paillier_bd_encrypt(ctxt, ptxt, &pubKey);
+        paillier_bd_encrypt(ctxt, r, &pubKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        paillier_bd_encrypt_pre(ctxt, ptxt, &pubKey);
+        paillier_bd_encrypt_pre(ctxt, r, &pubKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        paillier_bd_decrypt_crt(decr, ctxt, &privKey);
+        paillier_bd_decrypt_crt(&decr, ctxt, &privKey);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -303,13 +285,11 @@ void time_paillier_bd() {
 
 void time_paillier_bn() {
     BN_CTX *ctx = BN_CTX_new();
-    char str[10];
-    BIGNUM *ptxt = BN_CTX_get(ctx);
     BIGNUM *ctxt = BN_CTX_get(ctx);
-    BIGNUM *decr = BN_CTX_get(ctx);
     paillier_bn_pk pubKey;
     paillier_bn_sk privKey;
     paillier_bn_init(&pubKey, &privKey, ctx);
+    long decr;
 
     int N = 1000;
     int W = 100;
@@ -320,23 +300,21 @@ void time_paillier_bn() {
     unsigned long time_dec[N];
     for (int i = 0; i < N + W; i++) {
         int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        BN_dec2bn(&ptxt, str);
 
         start = time_micros();
-        paillier_bn_encrypt(ctxt, ptxt, &pubKey, ctx);
+        paillier_bn_encrypt(ctxt, r, &pubKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        paillier_bn_encrypt_pre(ctxt, ptxt, &pubKey, ctx);
+        paillier_bn_encrypt_pre(ctxt, r, &pubKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        paillier_bn_decrypt_crt(decr, ctxt, &privKey, ctx);
+        paillier_bn_decrypt_crt(&decr, ctxt, &privKey, ctx);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -352,16 +330,12 @@ void time_paillier_bn() {
 }
 
 void time_paillier_gmp() {
-    char str[10];
     paillier_gmp_pk pk;
     paillier_gmp_sk sk;
     paillier_gmp_init(&pk, &sk);
-    mpz_t ptxt;
-    mpz_init(ptxt);
     mpz_t ctxt;
     mpz_init(ctxt);
-    mpz_t decr;
-    mpz_init(decr);
+    long decr;
 
     int N = 1000;
     int W = 100;
@@ -372,23 +346,21 @@ void time_paillier_gmp() {
     unsigned long time_dec[N];
     for (int i = 0; i < N + W; i++) {
         int r = rand() % 1000 - 500;
-        sprintf(str, "%d", r);
-        mpz_set_si(ptxt, i);
 
         start = time_micros();
-        paillier_gmp_encrypt(ctxt, ptxt, &pk);
+        paillier_gmp_encrypt(ctxt, r, &pk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
 
         start = time_micros();
-        paillier_gmp_encrypt_pre(ctxt, ptxt, &pk);
+        paillier_gmp_encrypt_pre(ctxt, r, &pk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc2[i - W] = elapsed;
 
         start = time_micros();
-        paillier_gmp_decrypt_crt(decr, ctxt, &sk);
+        paillier_gmp_decrypt_crt(&decr, ctxt, &sk);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -405,21 +377,21 @@ void time_paillier_gmp() {
 }
 
 int main(int argc, char **argv) {
-   time_aes();
-   printf("\n");
-   time_aes_ssl();
-   printf("\n");
-   time_elgamal_bd();
-   printf("\n");
-   time_elgamal_bn();
-   printf("\n");
-   time_elgamal_gmp();
-   printf("\n");
+    time_aes();
+    printf("\n");
+    time_aes_ssl();
+    printf("\n");
+    time_elgamal_bd();
+    printf("\n");
+    time_elgamal_bn();
+    printf("\n");
+    time_elgamal_gmp();
+    printf("\n");
     time_paillier_bd();
-   printf("\n");
-   time_paillier_bn();
-   printf("\n");
-   time_paillier_gmp();
-   printf("\n");
-   exit(EXIT_SUCCESS);
+    printf("\n");
+    time_paillier_bn();
+    printf("\n");
+    time_paillier_gmp();
+    printf("\n");
+    exit(EXIT_SUCCESS);
 }

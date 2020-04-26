@@ -24,21 +24,21 @@ mpz_t mask;
 
 void paillier_gmp_init(paillier_gmp_pk *pubKey, paillier_gmp_sk *privKey);
 
-void paillier_gmp_encrypt(mpz_t ctxt, const mpz_t ptxt, const paillier_gmp_pk *pubKey);
+void paillier_gmp_encrypt(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
-void paillier_gmp_encrypt1(mpz_t ctxt, const mpz_t ptxt, const paillier_gmp_pk *pubKey);
+void paillier_gmp_encrypt1(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
-void paillier_gmp_encrypt_pre(mpz_t ctxt, const mpz_t ptxt, const paillier_gmp_pk *pubKey);
+void paillier_gmp_encrypt_pre(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
-void paillier_gmp_encrypt_pre1(mpz_t ctxt, const mpz_t ptxt, const paillier_gmp_pk *pubKey);
+void paillier_gmp_encrypt_pre1(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
-void paillier_gmp_decrypt(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
 
-void paillier_gmp_decrypt1(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt1(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
 
-void paillier_gmp_decrypt_crt(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt_crt(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
 
-void paillier_gmp_decrypt_crt1(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt_crt1(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
 
 void add_paillier_gmp(mpz_t result, const mpz_t a, const mpz_t b, const mpz_t n2);
 

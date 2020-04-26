@@ -26,17 +26,17 @@ void crt_exponentiation_bn(BIGNUM *result, const BIGNUM *base, const BIGNUM *exp
 
 void paillier_bn_init(paillier_bn_pk *pubKey, paillier_bn_sk *privKey, BN_CTX *ctx);
 
-void paillier_bn_encrypt1(BIGNUM *ctxt, const BIGNUM *ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
+void paillier_bn_encrypt1(BIGNUM *ctxt, int ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
 
-void paillier_bn_encrypt(BIGNUM *ctxt, const BIGNUM *ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
+void paillier_bn_encrypt(BIGNUM *ctxt, int ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
 
-void paillier_bn_encrypt_pre1(BIGNUM *ctxt, const BIGNUM *ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
+void paillier_bn_encrypt_pre1(BIGNUM *ctxt, int ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
 
-void paillier_bn_encrypt_pre(BIGNUM *ctxt, const BIGNUM *ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
+void paillier_bn_encrypt_pre(BIGNUM *ctxt, int ptxt, const paillier_bn_pk *pubKey, BN_CTX *ctx);
 
-void paillier_bn_decrypt(BIGNUM *ptxt, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx);
+void paillier_bn_decrypt(long *ptxt, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx);
 
-void paillier_bn_decrypt_crt(BIGNUM *ptxt, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx);
+void paillier_bn_decrypt_crt(long *ptxt, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx);
 
 void add_paillier_bn(BIGNUM *result, const BIGNUM *a, const BIGNUM *b, const BIGNUM *n2, BN_CTX *ctx);
 

@@ -22,10 +22,10 @@ typedef struct {
 
 void elgamal_bn_init(elg_pk *pk, elg_sk *sk, BN_CTX *ctx);
 
-void elgamal_bn_encrypt(BIGNUM *c1, BIGNUM *c2, BIGNUM *msg, elg_pk *pk, BN_CTX *ctx);
+void elgamal_bn_encrypt(BIGNUM *c1, BIGNUM *c2, int msg, elg_pk *pk, BN_CTX *ctx);
 
-void elgamal_bn_encrypt_pre(BIGNUM *c1, BIGNUM *c2, BIGNUM *msg, elg_pk *pk, BN_CTX *ctx);
+void elgamal_bn_encrypt_pre(BIGNUM *c1, BIGNUM *c2, int msg, elg_pk *pk, BN_CTX *ctx);
 
-void elgamal_bn_decrypt(BIGNUM *msg, BIGNUM *c1, BIGNUM *c2, elg_sk *sk, BN_CTX *ctx);
+void elgamal_bn_decrypt(long *msg, BIGNUM *c1, BIGNUM *c2, elg_sk *sk, BN_CTX *ctx);
 
 #endif

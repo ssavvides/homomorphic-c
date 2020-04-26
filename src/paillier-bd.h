@@ -25,12 +25,12 @@ static BIGD threshold_bd;
 
 void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey);
 
-void paillier_bd_encrypt(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *pubKey);
+void paillier_bd_encrypt(BIGD ctxt, int ptxt, const paillier_bd_pk *pubKey);
 
-void paillier_bd_encrypt_pre(BIGD ctxt, const BIGD ptxt, const paillier_bd_pk *pubKey);
+void paillier_bd_encrypt_pre(BIGD ctxt, int ptxt, const paillier_bd_pk *pubKey);
 
-void paillier_bd_decrypt(BIGD ptxt, const BIGD ctxt, const paillier_bd_sk *key);
+void paillier_bd_decrypt(long* ptxt, const BIGD ctxt, const paillier_bd_sk *key);
 
-void paillier_bd_decrypt_crt(BIGD ptxt, const BIGD ctxt, const paillier_bd_sk *key);
+void paillier_bd_decrypt_crt(long* ptxt, const BIGD ctxt, const paillier_bd_sk *key);
 
 #endif
