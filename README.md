@@ -20,6 +20,7 @@ Currently the library contains implementations of:
 
 In some cases multiple encryption/decryption implementations are explored.
 - For all versions of ElGamal and Paillier, we implement `encrypt_pre` versions of encryption which assumes a random value has been pre-computed.
+- For all versions of ElGamal and Paillier, we implement `encrypt_packed` and `decrypt_packed` versions of encryption and decryption respectively which packs multiple plaintext values into a single ciphertext.
 - For all versions of Paillier we also implement the `g = n + 1` optimization and the decryption based on the Chinese Remainder Theorem `decrypt_crt`.
 - For the `BN` and `GMP` versions of ElGamal and Paillier, support for negative numbers is added. The BigDigits library does not support negative numbers.
 
