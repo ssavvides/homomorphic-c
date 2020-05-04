@@ -3,8 +3,9 @@ CFLAGS = -g -I/usr/include -Wall -pedantic -Wno-unused-function \
 	-Wno-deprecated-declarations -std=gnu11
 LDFLAGS = -lm -lssl -lcrypto -lgmp
 DEPS = time.h pk.h
-OBJ = 	bd-ops.o bn-ops.o gmp-utils.o \
-		bigd.o bigdRand.o bigdigits.o bigdigitsRand.o \
+OBJ =   bigd.o bigdRand.o bigdigits.o bigdigitsRand.o \
+		bd-ops.o bn-ops.o gmp-ops.o \
+		pk.o packing.o \
 		aes.o aes-ssl.o \
 		elgamal-bd.o elgamal-bn.o elgamal-gmp.o \
 		paillier-bd.o paillier-bn.o paillier-gmp.o

@@ -1,6 +1,8 @@
 #ifndef PAILLIER_GMP_H
 #define PAILLIER_GMP_H
 
+#include <stdbool.h>
+
 typedef struct {
     mpz_t n, n2;
     mpz_t lambda;
@@ -24,15 +26,17 @@ mpz_t mask;
 
 void paillier_gmp_init(paillier_gmp_pk *pubKey, paillier_gmp_sk *privKey);
 
-void paillier_gmp_encrypt(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
+void paillier_gmp_encrypt(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey, bool precomputation);
+void paillier_gmp_encrypt_mpz(mpz_t ctxt, mpz_t ptxt, const paillier_gmp_pk *pubKey, bool precomputation);
+void paillier_gmp_encrypt_packed(mpz_t ctxt, int* messages, int len, const paillier_gmp_pk *pubKey, bool precomputation);
 
 void paillier_gmp_encrypt1(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
-
-void paillier_gmp_encrypt_pre(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
 void paillier_gmp_encrypt_pre1(mpz_t ctxt, int ptxt, const paillier_gmp_pk *pubKey);
 
 void paillier_gmp_decrypt(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt_mpz(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
+void paillier_gmp_decrypt_packed(long* messages, const mpz_t ctxt, const paillier_gmp_sk *key);
 
 void paillier_gmp_decrypt1(long* ptxt, const mpz_t ctxt, const paillier_gmp_sk *key);
 

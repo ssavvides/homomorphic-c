@@ -4,10 +4,13 @@
 
 
 void paillier_bn_init(paillier_bn_pk *pubKey, paillier_bn_sk *privKey, BN_CTX *ctx) {
-    BIGNUM *twoBN = BN_new();
+
+    BN_CTX_start(ctx);
+
+    BIGNUM *twoBN = BN_CTX_get(ctx);
     BN_set_word(twoBN, 2);
 
-    BIGNUM *halfKeyBN = BN_new();
+    BIGNUM *halfKeyBN = BN_CTX_get(ctx);
     BN_set_word(halfKeyBN, DECRYPTION_THRESHOLD);
 
     threshold_bn = BN_new();
@@ -18,7 +21,6 @@ void paillier_bn_init(paillier_bn_pk *pubKey, paillier_bn_sk *privKey, BN_CTX *c
     RAND_bytes(&buffer, sizeof(buffer));
     srandom((int) buffer);
 
-    BN_CTX_start(ctx);
     BIGNUM *p = BN_CTX_get(ctx);
     BIGNUM *q = BN_CTX_get(ctx);
     BIGNUM *tmp = BN_CTX_get(ctx);
@@ -104,6 +106,7 @@ void paillier_bn_init(paillier_bn_pk *pubKey, paillier_bn_sk *privKey, BN_CTX *c
 
     tmp2Pre = BN_new();
     bn_mod_exp_neg(tmp2Pre, rand, pubKey->n, pubKey->n2, ctx);
+
     BN_CTX_end(ctx);
 }
 
@@ -131,86 +134,79 @@ void paillier_bn_encrypt1(BIGNUM *ctxt, int msg, const paillier_bn_pk *pubKey, B
 }
 
 /**
- * Use g = n+1 to replace 1 exponentiation with a multiplication
+ * Opt1: Use g = n+1 to replace 1 exponentiation with a multiplication
  */
-void paillier_bn_encrypt(BIGNUM *ctxt, int msg, const paillier_bn_pk *pubKey, BN_CTX *ctx) {
+void paillier_bn_encrypt(BIGNUM *ctxt, int msg, const paillier_bn_pk *pubKey, bool precomputation, BN_CTX *ctx) {
     BN_CTX_start(ctx);
-
-    BIGNUM * ptxt = BN_CTX_get(ctx);
+    BIGNUM* ptxt = BN_CTX_get(ctx);
     int_to_bn(ptxt, msg);
-
-    // Select random r where r E Zn*
-    BIGNUM *rand = BN_CTX_get(ctx);
-    bn_rand(rand, DEFAULT_KEY_LEN, false);
-
-    //  OPTIMIZATION g=n+1
+    paillier_bn_encrypt_bn(ctxt, ptxt, pubKey, precomputation, ctx);
+    BN_CTX_end(ctx);
+}
+void paillier_bn_encrypt_packed(BIGNUM *ctxt, int* messages, int len,
+        const paillier_bn_pk *pubKey, bool precomputation, BN_CTX *ctx) {
+    BIGNUM* ptxt = BN_new();
+    bn_pack(ptxt, DEFAULT_KEY_LEN, messages, len, true, ctx);
+    paillier_bn_encrypt_bn(ctxt, ptxt, pubKey, precomputation, ctx);
+    BN_free(ptxt);
+}
+void paillier_bn_encrypt_bn(BIGNUM *ctxt, const BIGNUM *ptxt,
+        const paillier_bn_pk *pubKey, bool precomputation, BN_CTX *ctx) {
+    BN_CTX_start(ctx);
     BIGNUM *tmp1 = BN_CTX_get(ctx);
     BN_mul(tmp1, ptxt, pubKey->n, ctx);
     BN_add_word(tmp1, 1);
-
-    BIGNUM *tmp2 = BN_CTX_get(ctx);
-    bn_mod_exp_neg(tmp2, rand, pubKey->n, pubKey->n2, ctx);
-
-    // set ciphertext
-    BN_mod_mul(ctxt, tmp1, tmp2, pubKey->n2, ctx);
-
+    if (precomputation) {
+        BN_mod_mul(ctxt, tmp1, tmp2Pre, pubKey->n2, ctx);
+    } else {
+        BIGNUM *rnd = BN_CTX_get(ctx);
+        BIGNUM *tmp2 = BN_CTX_get(ctx);
+        bn_rand(rnd, DEFAULT_KEY_LEN, false);
+        bn_mod_exp_neg(tmp2, rnd, pubKey->n, pubKey->n2, ctx);
+        BN_mod_mul(ctxt, tmp1, tmp2, pubKey->n2, ctx);
+    }
     BN_CTX_end(ctx);
 }
 
 /**
- * No random
+ * Opt 2: No random (pre-encryption)
  */
 void paillier_bn_encrypt_pre1(BIGNUM *ctxt, int msg, const paillier_bn_pk *pubKey, BN_CTX *ctx) {
     BN_CTX_start(ctx);
-
     BIGNUM * ptxt = BN_CTX_get(ctx);
     int_to_bn(ptxt, msg);
-
     BIGNUM *tmp1 = BN_CTX_get(ctx);
     bn_mod_exp_neg(tmp1, pubKey->g, ptxt, pubKey->n2, ctx);
-
-    // set ciphertext
     BN_mod_mul(ctxt, tmp1, tmp2Pre, pubKey->n2, ctx);
-
     BN_CTX_end(ctx);
 }
 
-/**
- * Optimizations 2+3: No random and g=n+1
- */
-void paillier_bn_encrypt_pre(BIGNUM *ctxt, int msg, const paillier_bn_pk *pubKey, BN_CTX *ctx) {
-    BN_CTX_start(ctx);
-
-    BIGNUM * ptxt = BN_CTX_get(ctx);
-    int_to_bn(ptxt, msg);
-
-    BIGNUM *tmp1 = BN_CTX_get(ctx);
-    BN_mul(tmp1, ptxt, pubKey->n, ctx);
-    BN_add_word(tmp1, 1);
-
-    // set ciphertext
-    BN_mod_mul(ctxt, tmp1, tmp2Pre, pubKey->n2, ctx);
-
-    BN_CTX_end(ctx);
-}
 
 void paillier_bn_decrypt(long* msg, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx) {
     BN_CTX_start(ctx);
-
-    // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
-    BIGNUM *tmp = BN_CTX_get(ctx);
-    bn_mod_exp_neg(tmp, ctxt, key->lamda, key->n2, ctx);
-    bn_L(tmp, tmp, key->n, ctx);
-
     BIGNUM *ptxt = BN_CTX_get(ctx);
-    BN_mod_mul(ptxt, tmp, key->mu, key->n, ctx);
+    paillier_bn_decrypt_bn(ptxt, ctxt, key, ctx);
 
     // handle negative numbers
     if (BN_cmp(ptxt, threshold_bn) > 0)
         BN_sub(ptxt, ptxt, key->n);
 
     bn_to_long(msg, ptxt);
-
+    BN_CTX_end(ctx);
+}
+void paillier_bn_decrypt_packed(long* messages, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx) {
+    BN_CTX_start(ctx);
+    BIGNUM *packed_messages = BN_CTX_get(ctx);
+    paillier_bn_decrypt_bn(packed_messages, ctxt, key, ctx);
+    bn_unpack(messages, DEFAULT_KEY_LEN, packed_messages, true, 0, ctx);
+    BN_CTX_end(ctx);
+}
+void paillier_bn_decrypt_bn(BIGNUM* ptxt, const BIGNUM *ctxt, const paillier_bn_sk *key, BN_CTX *ctx) {
+    BN_CTX_start(ctx);
+    BIGNUM *tmp = BN_CTX_get(ctx);
+    bn_mod_exp_neg(tmp, ctxt, key->lamda, key->n2, ctx);
+    bn_L(tmp, tmp, key->n, ctx);
+    BN_mod_mul(ptxt, tmp, key->mu, key->n, ctx);
     BN_CTX_end(ctx);
 }
 

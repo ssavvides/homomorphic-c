@@ -1,4 +1,4 @@
-#include "gmp-utils.h"
+#include "gmp-ops.h"
 #include "paillier-gmp.h"
 #include "pk.h"
 
@@ -92,8 +92,8 @@ void paillier_gmp_init(paillier_gmp_pk *pubKey, paillier_gmp_sk *privKey) {
     mpz_clear(rand);
 }
 
-void paillier_gmp_encrypt1(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey) {
 
+void paillier_gmp_encrypt1(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey) {
     mpz_t ptxt;
     mpz_init(ptxt);
     mpz_set_si(ptxt, msg);
@@ -124,33 +124,43 @@ void paillier_gmp_encrypt1(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey) {
 /**
  * Use g = n+1 to replace 1 exponentiation with a multiplication
  */
-void paillier_gmp_encrypt(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey) {
+ void paillier_gmp_encrypt(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey,
+        bool precomputation) {
     mpz_t ptxt;
     mpz_init(ptxt);
     mpz_set_si(ptxt, msg);
-
-    mpz_t rnd;
-    mpz_init(rnd);
-    gmp_rand(rnd, s, pubKey->n2, false);
-
-    mpz_t tmp1;
-    mpz_init(tmp1);
-    mpz_powm(tmp1, rnd, pubKey->n, pubKey->n2);
-
-    // OPTIMIZATION g=n+1
+    paillier_gmp_encrypt_mpz(ctxt, ptxt, pubKey, precomputation);
+    mpz_clear(ptxt);
+}
+void paillier_gmp_encrypt_packed(mpz_t ctxt, int* messages, int len,
+        const paillier_gmp_pk *pubKey, bool precomputation) {
+    mpz_t ptxt;
+    mpz_init(ptxt);
+    gmp_pack(ptxt, DEFAULT_KEY_LEN, messages, len, true);
+    paillier_gmp_encrypt_mpz(ctxt, ptxt, pubKey, precomputation);
+    mpz_clear(ptxt);
+}
+void paillier_gmp_encrypt_mpz(mpz_t ctxt, mpz_t ptxt,
+        const paillier_gmp_pk *pubKey, bool precomputation) {
     mpz_t tmp2;
     mpz_init(tmp2);
     mpz_mul(tmp2, ptxt, pubKey->n);
     mpz_add_ui(tmp2, tmp2, 1);
-
-    // set ciphertext
-    mpz_mul(ctxt, tmp1, tmp2);
+    if (precomputation) {
+        mpz_mul(ctxt, tmp1Pre, tmp2);
+    } else {
+        mpz_t rnd;
+        mpz_init(rnd);
+        gmp_rand(rnd, s, pubKey->n2, false);
+        mpz_t tmp1;
+        mpz_init(tmp1);
+        mpz_powm(tmp1, rnd, pubKey->n, pubKey->n2);
+        mpz_mul(ctxt, tmp1, tmp2);
+        mpz_clear(tmp1);
+        mpz_clear(rnd);
+    }
     mpz_mod(ctxt, ctxt, pubKey->n2);
-
-    mpz_clear(tmp1);
     mpz_clear(tmp2);
-    // mpz_clear(rnd);
-    mpz_clear(ptxt);
 }
 
 /**
@@ -169,28 +179,7 @@ void paillier_gmp_encrypt_pre1(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKe
     mpz_mul(ctxt, tmp1Pre, tmp2);
     mpz_mod(ctxt, ctxt, pubKey->n2);
 
-    //mpz_clear(tmp2);
-    mpz_clear(ptxt);
-}
-
-/**
- * Optimizations 2+3: No random and g=n+1
- */
-void paillier_gmp_encrypt_pre(mpz_t ctxt, int msg, const paillier_gmp_pk *pubKey) {
-    mpz_t ptxt;
-    mpz_init(ptxt);
-    mpz_set_si(ptxt, msg);
-
-    mpz_t tmp2;
-    mpz_init(tmp2);
-    mpz_mul(tmp2, ptxt, pubKey->n);
-    mpz_add_ui(tmp2, tmp2, 1);
-
-    // set ciphertext
-    mpz_mul(ctxt, tmp1Pre, tmp2);
-    mpz_mod(ctxt, ctxt, pubKey->n2);
-
-    // mpz_clear(tmp2);
+    mpz_clear(tmp2);
     mpz_clear(ptxt);
 }
 
@@ -202,6 +191,7 @@ void paillier_gmp_decrypt1(long* msg, const mpz_t ctxt, const paillier_gmp_sk *k
     gmp_L(tmp, tmp, key->n);
 
     mpz_t ptxt;
+    mpz_init(ptxt);
     mpz_mul(ptxt, tmp, key->mu);
     mpz_mod(ptxt, ptxt, key->n);
 
@@ -217,8 +207,10 @@ void paillier_gmp_decrypt1(long* msg, const mpz_t ctxt, const paillier_gmp_sk *k
 /**
  * Using CRT for exponentiation
  */
-void paillier_gmp_decrypt_crt1(long* msg, const mpz_t ctxt, const paillier_gmp_sk *key) {
+void paillier_gmp_decrypt_crt1(long* msg, const mpz_t ctxt,
+        const paillier_gmp_sk *key) {
     mpz_t ptxt;
+    mpz_init(ptxt);
     gmp_crt_exponentiation(ptxt, ctxt, key->lambda, key->lambda, key->p2invq2, key->p2, key->q2);
     gmp_L(ptxt, ptxt, key->n);
     mpz_mul(ptxt, ptxt, key->mu);
@@ -237,6 +229,18 @@ void paillier_gmp_decrypt_crt1(long* msg, const mpz_t ctxt, const paillier_gmp_s
  * Using pre-computed n inverted for L function
  */
 void paillier_gmp_decrypt(long* msg, const mpz_t ctxt, const paillier_gmp_sk *key) {
+    mpz_t ptxt;
+    mpz_init(ptxt);
+    paillier_gmp_decrypt_mpz(ptxt, ctxt, key);
+
+    // handle negative numbers
+    if (mpz_cmp(ptxt, threshold_gmp) > 0)
+        mpz_sub(ptxt, ptxt, key->n);
+
+    *msg = mpz_get_si(ptxt);
+    mpz_clear(ptxt);
+}
+void paillier_gmp_decrypt_mpz(mpz_t ptxt, const mpz_t ctxt, const paillier_gmp_sk *key) {
     // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
     mpz_t tmp;
     mpz_init(tmp);
@@ -245,25 +249,25 @@ void paillier_gmp_decrypt(long* msg, const mpz_t ctxt, const paillier_gmp_sk *ke
     // use precomputed n
     gmp_L2(tmp, tmp, key->ninv, mask);
 
-    mpz_t ptxt;
     mpz_mul(ptxt, tmp, key->mu);
     mpz_mod(ptxt, ptxt, key->n);
 
-    // handle negative numbers
-    if (mpz_cmp(ptxt, threshold_gmp) > 0)
-        mpz_sub(ptxt, ptxt, key->n);
-
-    *msg = mpz_get_si(ptxt);
-
-    mpz_clear(ptxt);
     mpz_clear(tmp);
+}
+void paillier_gmp_decrypt_packed(long* messages, const mpz_t ctxt,
+        const paillier_gmp_sk *key) {
+    mpz_t packed_messages;
+    mpz_init(packed_messages);
+    paillier_gmp_decrypt_mpz(packed_messages, ctxt, key);
+    gmp_unpack(messages, DEFAULT_KEY_LEN, packed_messages, true, 0);
+    mpz_clear(packed_messages);
 }
 
 /**
  * Using CRT for exponentiation and precomputed ninv
  */
-void paillier_gmp_decrypt_crt(long* msg, const mpz_t ctxt, const paillier_gmp_sk *key) {
-
+void paillier_gmp_decrypt_crt(long* msg, const mpz_t ctxt,
+        const paillier_gmp_sk *key) {
     mpz_t ptxt;
     mpz_init(ptxt);
     gmp_crt_exponentiation(ptxt, ctxt, key->lambda,

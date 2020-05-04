@@ -1,4 +1,5 @@
 #include "bn-ops.h"
+#include "packing.h"
 
 
 // LCM for BIGNUMs
@@ -91,7 +92,65 @@ void int_to_bn(BIGNUM* res, int number) {
     BN_dec2bn(&res, str);
 }
 
-void bn_to_long(long* res, BIGNUM * number) {
+void bn_to_long(long* res, BIGNUM* number) {
     char *s = BN_bn2dec(number);
     *res = strtol(s, (char **)NULL, 10);
+}
+
+void bn_pack(BIGNUM* packed_messages, int ctxt_bits, int* messages, int len,
+        bool ahe, BN_CTX *ctx) {
+    BN_CTX_start(ctx);
+
+    int ptxt_bits = sizeof(int) * 8;
+    int total_bits = total_packing_bits(ptxt_bits, ahe);
+    int items = items_per_ctxt(ptxt_bits, ahe);
+
+    if (len > items) {
+        printf("Too many items to pack.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    BIGNUM* two = BN_CTX_get(ctx);
+    BN_set_word(two, 2);
+    BIGNUM* bits = BN_CTX_get(ctx);
+    BN_set_word(bits, total_bits);
+    BIGNUM* shift = BN_CTX_get(ctx);
+    BN_exp(shift, two, bits, ctx);
+
+    BIGNUM* message = BN_CTX_get(ctx);
+    BN_set_word(packed_messages, 0);
+    for (int i = 0; i < len; i++) {
+        BN_mul(packed_messages, packed_messages, shift, ctx);
+        int_to_bn(message, messages[i]);
+        BN_add(packed_messages, packed_messages, message);
+    }
+
+    BN_CTX_end(ctx);
+}
+
+void bn_unpack(long* messages, int ctxt_bits, BIGNUM* packed_messages,
+        bool ahe, int mhe_ops, BN_CTX *ctx) {
+    BN_CTX_start(ctx);
+    int ptxt_bits = sizeof(int) * 8;
+    int total_bits = total_packing_bits(ptxt_bits, ahe);
+    int items = items_per_ctxt(ptxt_bits, ahe);
+
+    BIGNUM* two = BN_CTX_get(ctx);
+    BN_set_word(two, 2);
+    BIGNUM* bits = BN_CTX_get(ctx);
+    BN_set_word(bits, total_bits);
+    BIGNUM* shift = BN_CTX_get(ctx);
+    BN_exp(shift, two, bits, ctx);
+
+    BIGNUM* message = BN_CTX_get(ctx);
+    for (int i = 0; i < items; i++) {
+        BN_mod(message, packed_messages, shift, ctx);
+        bn_to_long(&messages[items - i - 1], message);
+        BN_div(packed_messages, NULL, packed_messages, shift, ctx);
+
+        // skip MHE intermediate values
+        for (int j = 0; !ahe && j < mhe_ops; j++)
+            BN_div(packed_messages, NULL, packed_messages, shift, ctx);
+    }
+    BN_CTX_end(ctx);
 }

@@ -24,6 +24,23 @@ void print_millis(const char *message, const double millis) {
     printf("%s: %.4f ms\n", message, millis);
 }
 
+void get_stats(double* mean, double* std, unsigned long *micros, int size) {
+
+    double sum = 0;
+    for (int i = 0; i < size; i++)
+        sum += ((double) micros[i] / 1000);
+
+    *mean = sum / size;
+
+    double variance = 0;
+    for (int i = 0; i < size; i++)
+        variance += pow((double) micros[i] / 1000 - *mean, 2);
+    variance /= size;
+
+    *std = sqrt(variance);
+}
+
+
 // NB: takes micros as input but prints in millis
 void print_stats(unsigned long *micros, int size) {
 

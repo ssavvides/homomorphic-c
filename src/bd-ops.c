@@ -1,4 +1,5 @@
 #include "bd-ops.h"
+#include "packing.h"
 
 void bd_L(BIGD res, const BIGD u, const BIGD n) {
     BIGD u_cp = bdNew();
@@ -67,4 +68,62 @@ void bd_to_long(long* res, BIGD number) {
     s = malloc(nchars + 1);
     nchars = bdConvToDecimal(number, s, nchars + 1);
     *res = strtol(s, (char **)NULL, 10);
+}
+
+void bd_pack(BIGD packed_messages, int ctxt_bits, int* messages, int len,
+        bool ahe) {
+    int ptxt_bits = sizeof(int) * 8;
+    int total_bits = total_packing_bits(ptxt_bits, ahe);
+    int items = items_per_ctxt(ptxt_bits, ahe);
+
+    if (len > items) {
+        printf("Too many items to pack.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    BIGD two = bdNew();
+    bdSetShort(two, 2);
+    BIGD shift = bdNew();
+    bdPower(shift, two, total_bits);
+
+    BIGD message = bdNew();
+    bdSetShort(packed_messages, 0);
+    for (int i = 0; i < len; i++) {
+        bdMultiply_s(packed_messages, packed_messages, shift);
+        int_to_bd(message, messages[i]);
+        bdAdd_s(packed_messages, packed_messages, message);
+    }
+
+    bdFree(&two);
+    bdFree(&shift);
+    bdFree(&message);
+}
+
+void bd_unpack(long* messages, int ctxt_bits, BIGD packed_messages, bool ahe,
+        int mhe_ops) {
+    int ptxt_bits = sizeof(int) * 8;
+    int total_bits = total_packing_bits(ptxt_bits, ahe);
+    int items = items_per_ctxt(ptxt_bits, ahe);
+
+    BIGD two = bdNew();
+    bdSetShort(two, 2);
+    BIGD shift = bdNew();
+    bdPower(shift, two, total_bits);
+
+    BIGD message = bdNew();
+    BIGD r = bdNew();
+    for (int i = 0; i < items; i++) {
+        bdModulo(message, packed_messages, shift);
+        bd_to_long(&messages[items - i - 1], message);
+        bdDivide_s(packed_messages, r, packed_messages, shift);
+
+        // skip MHE intermediate values
+        for (int j = 0; !ahe && j < mhe_ops; j++)
+            bdDivide_s(packed_messages, r, packed_messages, shift);
+    }
+
+    bdFree(&two);
+    bdFree(&shift);
+    bdFree(&message);
+    bdFree(&r);
 }

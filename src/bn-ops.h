@@ -28,4 +28,9 @@ void bn_rand(BIGNUM* rnd, int bits, bool can_be_zero);
 void int_to_bn(BIGNUM* res, int number);
 void bn_to_long(long* res, BIGNUM * number);
 
+void bn_pack(BIGNUM* packed_messages, int ctxt_bits, int* messages, int len,
+	bool ahe, BN_CTX *ctx);
+void bn_unpack(long* messages, int ctxt_bits, BIGNUM* packed_messages, bool ahe,
+	int mhe_ops, BN_CTX *ctx);
+
 #endif

@@ -19,4 +19,9 @@ void bd_rand(BIGD rnd, int range, bool can_be_zero);
 void int_to_bd(BIGD res, int number);
 void bd_to_long(long* res, BIGD number);
 
+void bd_pack(BIGD packed_messages, int ctxt_bits, int* messages, int len,
+	bool ahe);
+void bd_unpack(long* messages, int ctxt_bits, BIGD packed_messages, bool ahe,
+	int mhe_ops);
+
 #endif

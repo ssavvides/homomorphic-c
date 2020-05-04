@@ -93,70 +93,66 @@ void paillier_bd_init(paillier_bd_pk *pubKey, paillier_bd_sk *privKey) {
     bdFree(&rand);
 }
 
-void paillier_bd_encrypt(BIGD ctxt, int msg, const paillier_bd_pk *pubKey) {
-
+void paillier_bd_encrypt(BIGD ctxt, int msg, const paillier_bd_pk *pubKey, bool precomputation) {
     BIGD ptxt = bdNew();
     int_to_bd(ptxt, msg);
-
-    // OPT: g = n+1
-    BIGD tmp1 = bdNew();
-    bdMultiply(tmp1, ptxt, pubKey->n);
-    bdShortAdd(tmp1, tmp1, 1);
-
-    // generate random number
-    BIGD rand = bdNew();
-    bd_rand(rand, DEFAULT_KEY_LEN, true);
-
-    BIGD tmp2 = bdNew();
-    bdModExp(tmp2, rand, pubKey->n, pubKey->n2);
-
-    bdModMult(ctxt, tmp1, tmp2, pubKey->n2);
-
-    bdFree(&tmp1);
-    bdFree(&tmp2);
-    bdFree(&rand);
+    paillier_bd_encrypt_bd(ctxt, ptxt, pubKey, precomputation);
     bdFree(&ptxt);
 }
-
-void paillier_bd_encrypt_pre(BIGD ctxt, int msg, const paillier_bd_pk *pubKey) {
-
+void paillier_bd_encrypt_packed(BIGD ctxt, int* messages, int len,
+        const paillier_bd_pk *pubKey, bool precomputation) {
     BIGD ptxt = bdNew();
-    int_to_bd(ptxt, msg);
-
+    bd_pack(ptxt, DEFAULT_KEY_LEN, messages, len, true);
+    paillier_bd_encrypt_bd(ctxt, ptxt, pubKey, precomputation);
+    bdFree(&ptxt);
+}
+void paillier_bd_encrypt_bd(BIGD ctxt, BIGD ptxt, const paillier_bd_pk *pubKey,
+        bool precomputation) {
     BIGD tmp1 = bdNew();
     bdMultiply(tmp1, ptxt, pubKey->n);
     bdShortAdd(tmp1, tmp1, 1);
-
-    // set ciphertext
-    bdModMult(ctxt, tmp1, pubKey->tmp2Pre, pubKey->n2);
-
+    if (precomputation) {
+        bdModMult(ctxt, tmp1, pubKey->tmp2Pre, pubKey->n2);
+    } else {
+        BIGD rnd = bdNew();
+        bd_rand(rnd, DEFAULT_KEY_LEN, true);
+        BIGD tmp2 = bdNew();
+        bdModExp(tmp2, rnd, pubKey->n, pubKey->n2);
+        bdModMult(ctxt, tmp1, tmp2, pubKey->n2);
+        bdFree(&tmp2);
+        bdFree(&rnd);
+    }
     bdFree(&tmp1);
-    bdFree(&ptxt);
 }
 
 void paillier_bd_decrypt(long* msg, const BIGD ctxt, const paillier_bd_sk *key) {
-    // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
+    BIGD ptxt = bdNew();
+    paillier_bd_decrypt_bd(ptxt, ctxt, key);
+    bd_to_long(msg, ptxt);
+    bdFree(&ptxt);
+}
+void paillier_bd_decrypt_packed(long* messages, const BIGD ctxt, const paillier_bd_sk *key) {
+    BIGD ptxt = bdNew();
+    paillier_bd_decrypt_bd(ptxt, ctxt, key);
+    bd_unpack(messages, DEFAULT_KEY_LEN, ptxt, true, 0);
+    bdFree(&ptxt);
+}
+void paillier_bd_decrypt_bd(BIGD ptxt, const BIGD ctxt, const paillier_bd_sk *key) {
     BIGD tmp = bdNew();
     bdModExp(tmp, ctxt, key->lamda, key->n2);
     BIGD u_cp = bdNew();
     bdShortAdd(u_cp, tmp, 1);
-
     BIGD res = bdNew();
     BIGD r = bdNew();
     bdDivide(res, r, u_cp, key->n);
-
-    BIGD ptxt = bdNew();
     bdModMult(ptxt, res, key->mu, key->n);
-
-    bd_to_long(msg, ptxt);
-
     bdFree(&tmp);
     bdFree(&u_cp);
     bdFree(&res);
     bdFree(&r);
-    bdFree(&ptxt);
 }
 
+// this does not work
 void paillier_bd_decrypt_crt(long* msg, const BIGD ctxt, const paillier_bd_sk *key) {
     // Compute the plaintext message as: m = L(c^lamda mod n2)*mu mod n
     BIGD tmp = bdNew();

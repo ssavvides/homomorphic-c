@@ -1,14 +1,19 @@
 #include "pk.h"
-#include "gmp-utils.h"
+#include "gmp-ops.h"
 #include "elgamal-gmp.h"
-
 
 static mpz_t threshold;
 static gmp_randstate_t seed;
 static mpz_t preS;
 static mpz_t preC1;
 
-void elgamal_gmp_init(elg_gmp_pk *pk, elg_gmp_sk *sk) {
+void elgamal_gmp_ctxt_init(elgamal_gmp_ctxt *ctxt) {
+    ctxt->packed_ops = 0;
+    mpz_init(ctxt->c1);
+    mpz_init(ctxt->c2);
+}
+
+void elgamal_gmp_init(elgamal_gmp_pk *pk, elgamal_gmp_sk *sk) {
 
     mpz_init(threshold);
     mpz_setbit(threshold, DECRYPTION_THRESHOLD);
@@ -36,7 +41,7 @@ void elgamal_gmp_init(elg_gmp_pk *pk, elg_gmp_sk *sk) {
     mpz_set(pk->g, sk->g);
     mpz_set(pk->h, sk->h);
 
-    // PRECOMPUTATION
+    // pre-computation
     mpz_t y;
     mpz_init(y);
     gmp_rand(y, seed, pk->n, false);
@@ -52,61 +57,69 @@ void elgamal_gmp_init(elg_gmp_pk *pk, elg_gmp_sk *sk) {
     mpz_clear(y);
 }
 
-void elgamal_gmp_encrypt(mpz_t c1, mpz_t c2, int msg, elg_gmp_pk *pk) {
-    mpz_t y, s, ptxt;
-
-    mpz_init(ptxt);
-    mpz_set_si(ptxt, msg);
-
-    mpz_init(y);
-    gmp_rand(y, seed, pk->n, false);
-
-
-    mpz_init(s);
-    mpz_powm(s, pk->h, y, pk->n);
-
-    // c1 = g^y (mod n)
-    mpz_powm(c1, pk->g, y, pk->n);
-
-    // c2 = msg * s mod n
-    mpz_mul(c2, ptxt, s);
-    mpz_mod(c2, c2, pk->n);
-
-    mpz_clear(y);
-    mpz_clear(s);
-    mpz_clear(ptxt);
-}
-
-void elgamal_gmp_encrypt_pre(mpz_t c1, mpz_t c2, int msg, elg_gmp_pk *pk) {
+void elgamal_gmp_encrypt(elgamal_gmp_ctxt *ctxt, int msg, elgamal_gmp_pk *pk,
+        bool precomptation) {
     mpz_t ptxt;
     mpz_init(ptxt);
     mpz_set_si(ptxt, msg);
-
-    mpz_set(c1, preC1);
-    mpz_mul(c2, ptxt, preS);
-    mpz_mod(c2, c2, pk->n);
-
+    elgamal_gmp_encrypt_mpz(ctxt, ptxt, pk, precomptation);
     mpz_clear(ptxt);
 }
-
-void elgamal_gmp_decrypt(long* msg, mpz_t c1, mpz_t c2, elg_gmp_sk *sk) {
-    mpz_t s, inv_s, ptxt;
-    mpz_init(s);
-    mpz_init(inv_s);
+void elgamal_gmp_encrypt_packed(elgamal_gmp_ctxt *ctxt, int* messages, int len,
+        elgamal_gmp_pk *pk, bool precomptation) {
+    mpz_t ptxt;
     mpz_init(ptxt);
+    gmp_pack(ptxt, DEFAULT_KEY_LEN, messages, len, false);
+    elgamal_gmp_encrypt_mpz(ctxt, ptxt, pk, precomptation);
+    mpz_clear(ptxt);
+}
+void elgamal_gmp_encrypt_mpz(elgamal_gmp_ctxt *ctxt, mpz_t ptxt,
+        elgamal_gmp_pk *pk, bool precomptation) {
+    if (precomptation) {
+        mpz_set(ctxt->c1, preC1);
+        mpz_mul(ctxt->c2, ptxt, preS);
+        mpz_mod(ctxt->c2, ctxt->c2, pk->n);
+    } else {
+        mpz_t rnd, s;
+        mpz_init(rnd);
+        gmp_rand(rnd, seed, pk->n, false);
+        mpz_powm(ctxt->c1, pk->g, rnd, pk->n);
+        mpz_init(s);
+        mpz_powm(s, pk->h, rnd, pk->n);
+        mpz_mul(ctxt->c2, ptxt, s);
+        mpz_mod(ctxt->c2, ctxt->c2, pk->n);
+        mpz_clear(rnd);
+        mpz_clear(s);
+    }
+}
 
-    mpz_powm(s, c1, sk->x, sk->n);
-    mpz_invert(inv_s, s, sk->n);
-    mpz_mul(ptxt, c2, inv_s);
-    mpz_mod(ptxt, ptxt, sk->n);
+void elgamal_gmp_decrypt(long* msg, elgamal_gmp_ctxt *ctxt, elgamal_gmp_sk *sk) {
+    mpz_t ptxt;
+    mpz_init(ptxt);
+    elgamal_gmp_decrypt_mpz(ptxt, ctxt, sk);
 
     // handle negative numbers
     if (mpz_cmp(ptxt, threshold) > 0)
         mpz_sub(ptxt, ptxt, sk->n);
 
     *msg = mpz_get_si(ptxt);
-
+    mpz_clear(ptxt);
+}
+void elgamal_gmp_decrypt_packed(long* messages, elgamal_gmp_ctxt *ctxt, elgamal_gmp_sk *sk) {
+    mpz_t packed_messages;
+    mpz_init(packed_messages);
+    elgamal_gmp_decrypt_mpz(packed_messages, ctxt, sk);
+    gmp_unpack(messages, DEFAULT_KEY_LEN, packed_messages, false, ctxt->packed_ops);
+    mpz_clear(packed_messages);
+}
+void elgamal_gmp_decrypt_mpz(mpz_t ptxt, elgamal_gmp_ctxt *ctxt, elgamal_gmp_sk *sk) {
+    mpz_t s, inv_s;
+    mpz_init(s);
+    mpz_init(inv_s);
+    mpz_powm(s, ctxt->c1, sk->x, sk->n);
+    mpz_invert(inv_s, s, sk->n);
+    mpz_mul(ptxt, ctxt->c2, inv_s);
+    mpz_mod(ptxt, ptxt, sk->n);
     mpz_clear(s);
     mpz_clear(inv_s);
-    mpz_clear(ptxt);
 }

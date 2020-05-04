@@ -1,6 +1,8 @@
 #ifndef ELGAMAL_BD_H
 #define ELGAMAL_BD_H
 
+#include <stdbool.h>
+
 #include "bigd.h"
 #include "bigdRand.h"
 
@@ -12,22 +14,33 @@ typedef struct {
     // pre-computation
     BIGD sPre;
     BIGD c1Pre;
-} elg_bd_pk;
+} elgamal_bd_pk;
 
 typedef struct {
     BIGD n;
     BIGD g;
     BIGD h;
     BIGD x;
-} elg_bd_sk;
+} elgamal_bd_sk;
 
+typedef struct {
+    int packed_ops;
+    BIGD c1;
+    BIGD c2;
+} elgamal_bd_ctxt;
 
-void elgamal_bd_init(elg_bd_pk *pk, elg_bd_sk *sk);
+void elgamal_bd_ctxt_init(elgamal_bd_ctxt *ctxt);
+void elgamal_bd_init(elgamal_bd_pk *pk, elgamal_bd_sk *sk);
 
-void elgamal_bd_encrypt(BIGD c1, BIGD c2, int msg, elg_bd_pk *pk);
+void elgamal_bd_encrypt(elgamal_bd_ctxt* ctxt, int msg, elgamal_bd_pk *pk,
+    bool precomptation);
+void elgamal_bd_encrypt_bd(elgamal_bd_ctxt* ctxt, BIGD ptxt, elgamal_bd_pk *pk,
+    bool precomptation);
+void elgamal_bd_encrypt_packed(elgamal_bd_ctxt* ctxt, int* messages, int len,
+    elgamal_bd_pk *pk, bool precomptation);
 
-void elgamal_bd_encrypt_pre(BIGD c1, BIGD c2, int msg, elg_bd_pk *pk);
-
-void elgamal_bd_decrypt(long* msg, BIGD c1, BIGD c2, elg_bd_sk *sk);
+void elgamal_bd_decrypt(long* msg, elgamal_bd_ctxt* ctxt, elgamal_bd_sk *sk);
+void elgamal_bd_decrypt_packed(long* messages, elgamal_bd_ctxt *ctxt, elgamal_bd_sk *sk);
+void elgamal_bd_decrypt_bd(BIGD ptxt, elgamal_bd_ctxt *ctxt, elgamal_bd_sk *sk);
 
 #endif
