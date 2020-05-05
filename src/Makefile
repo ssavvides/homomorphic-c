@@ -6,7 +6,7 @@ DEPS = time.h pk.h
 OBJ =   bigd.o bigdRand.o bigdigits.o bigdigitsRand.o \
 		bd-ops.o bn-ops.o gmp-ops.o \
 		pk.o packing.o \
-		aes.o aes-ssl.o \
+		aes.o aes-ssl.o fnr.o fnr-ssl.o \
 		elgamal-bd.o elgamal-bn.o elgamal-gmp.o \
 		paillier-bd.o paillier-bn.o paillier-gmp.o
 

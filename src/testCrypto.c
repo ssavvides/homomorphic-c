@@ -4,9 +4,14 @@
 
 #include "aes.h"
 #include "aes-ssl.h"
+
+#include "fnr.h"
+#include "fnr-ssl.h"
+
 #include "elgamal-bd.h"
 #include "elgamal-bn.h"
 #include "elgamal-gmp.h"
+
 #include "paillier-bd.h"
 #include "paillier-bn.h"
 #include "paillier-gmp.h"
@@ -14,34 +19,20 @@
 #include "packing.h"
 
 void test_aes() {
-    uint8_t key[] = {
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-    uint8_t iv[] = {
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-    uint8_t ptxt[] = {
-            0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
-            0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
-            0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c,
-            0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
-            0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11,
-            0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
-            0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17,
-            0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
-    };
-    uint8_t ptxt_copy[64];
-    memcpy(ptxt_copy, ptxt, sizeof(ptxt));
     struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, key, iv);
-    AES_CBC_encrypt_buffer(&ctx, ptxt, 64);
-    AES_ctx_set_iv(&ctx, iv);
-    AES_CBC_decrypt_buffer(&ctx, ptxt, 64);
+    aes_init(&ctx);
+
+
+    char* ptxt = "1234567890123456";
+    int len = 16;
+    char ctxt[len];
+    char decr[len];
+
+    aes_encrypt(&ctx, ptxt, len, ctxt);
+    aes_decrypt(&ctx, ctxt, len, decr);
 
     printf("AES: ");
-    if (0 == memcmp((char *) ptxt, (char *) ptxt_copy, 64))
+    if (!memcmp((char *) ptxt, decr, len))
         printf("SUCCESS!\n");
     else {
         printf("FAILURE!\n");
@@ -59,7 +50,41 @@ void test_aes_ssl() {
     aes_ssl_decrypt(enc_out, dec_out);
 
     printf("AES-SSL: ");
-    if (0 == memcmp((char *) text, (char *) dec_out, 12))
+    if (!memcmp((char *) text, (char *) dec_out, 12))
+        printf("SUCCESS!\n");
+    else {
+        printf("FAILURE!\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void test_fnr() {
+    char ptxt[25] = "abcd";
+    char ctxt[25];
+    char decr[25];
+    fnr_init();
+    fnr_encrypt(ptxt, ctxt);
+    fnr_decrypt(decr, ctxt);
+
+    // printf("FNR: ");
+    // if (!memcmp(ptxt, decr, 16))
+    //     printf("SUCCESS!\n");
+    // else {
+    //     printf("FAILURE!\n");
+    //     exit(EXIT_FAILURE);
+    // }
+}
+
+void test_fnr_ssl() {
+    char ptxt[25] = "abcd";
+    char ctxt[25];
+    char decr[25];
+    fnr_ssl_init();
+    fnr_ssl_encrypt(ptxt, ctxt);
+    fnr_ssl_decrypt(decr, ctxt);
+
+    printf("FNR-SSL: ");
+    if (memcmp(ptxt, decr, 4) == 0)
         printf("SUCCESS!\n");
     else {
         printf("FAILURE!\n");
@@ -128,6 +153,9 @@ int main(void) {
 
     test_aes();
     test_aes_ssl();
+    test_fnr();
+    test_fnr_ssl();
+    printf("\n");
 
     for (int scheme = elgamal_scheme; scheme <= paillier_scheme; scheme++) {
         for (int library = bigdigits_lib; library <= gmp_lib; library++) {
@@ -138,3 +166,4 @@ int main(void) {
 
     exit(EXIT_SUCCESS);
 }
+

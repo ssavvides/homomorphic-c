@@ -3,6 +3,17 @@
 
 #include <stdint.h>
 
+// hard-coded keys
+static uint8_t aes_key[] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+};
+static uint8_t aes_iv[] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+};
+
+
 // #define the macros below to 1/0 to enable/disable the mode of operation.
 //
 // CBC enables AES encryption in CBC-mode of operation.
@@ -91,5 +102,10 @@ void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length);
 
 #endif // #if defined(CTR) && (CTR == 1)
 
+void aes_init(struct AES_ctx *aes_ctx);
+void string_to_bytes(char* str, int len, uint8_t* bytes);
+void bytes_to_string(uint8_t* bytes, int len, char* str);
+void aes_encrypt(struct AES_ctx *aes_ctx, char* ptxt, int len, char* ctxt);
+void aes_decrypt(struct AES_ctx *aes_ctx, char* ctxt, int len, char* ptxt);
 
 #endif //TINYAES_H

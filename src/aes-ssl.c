@@ -1,7 +1,3 @@
-/**
- * savvas@purdue.edu
- * 31/07/2019
- */
 #include <openssl/aes.h>
 #include "aes-ssl.h"
 

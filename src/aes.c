@@ -493,9 +493,7 @@ void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t *buf, uint32_t length) 
         Cipher((state_t *) buf, ctx->RoundKey);
         Iv = buf;
         buf += AES_BLOCKLEN;
-        //printf("Step %d - %d", i/16, i);
     }
-    /* store Iv in ctx for next call */
     memcpy(ctx->Iv, Iv, AES_BLOCKLEN);
 }
 
@@ -517,27 +515,19 @@ void AES_CBC_decrypt_buffer(struct AES_ctx *ctx, uint8_t *buf, uint32_t length) 
 
 #if defined(CTR) && (CTR == 1)
 
-/* Symmetrical operation: same function for encrypting as for decrypting. Note any IV/nonce should never be reused with the same key */
-void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length)
-{
+void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length) {
   uint8_t buffer[AES_BLOCKLEN];
 
   unsigned i;
   int bi;
-  for (i = 0, bi = AES_BLOCKLEN; i < length; ++i, ++bi)
-  {
-    if (bi == AES_BLOCKLEN) /* we need to regen xor compliment in buffer */
-    {
-
+  for (i = 0, bi = AES_BLOCKLEN; i < length; ++i, ++bi) {
+    if (bi == AES_BLOCKLEN) {
       memcpy(buffer, ctx->Iv, AES_BLOCKLEN);
       Cipher((state_t*)buffer,ctx->RoundKey);
 
       /* Increment Iv and handle overflow */
-      for (bi = (AES_BLOCKLEN - 1); bi >= 0; --bi)
-      {
-    /* inc will overflow */
-        if (ctx->Iv[bi] == 255)
-    {
+      for (bi = (AES_BLOCKLEN - 1); bi >= 0; --bi) {
+        if (ctx->Iv[bi] == 255) {
           ctx->Iv[bi] = 0;
           continue;
         }
@@ -553,3 +543,34 @@ void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length)
 
 #endif // #if defined(CTR) && (CTR == 1)
 
+
+void aes_init(struct AES_ctx *aes_ctx) {
+    AES_init_ctx_iv(aes_ctx, aes_key, aes_iv);
+}
+
+void string_to_bytes(char* str, int len, uint8_t* bytes) {
+    for (int i = 0; i < len; i++) {
+        bytes[i] = (uint8_t) str[i];
+    }
+}
+
+void bytes_to_string(uint8_t* bytes, int len, char* str) {
+    for (int i = 0; i < len; ++i) {
+        str[i] = (char) bytes[i];
+    }
+}
+
+void aes_encrypt(struct AES_ctx *aes_ctx, char* ptxt, int len, char* ctxt) {
+    uint8_t bytes[len];
+    string_to_bytes(ptxt, len, bytes);
+    AES_CBC_encrypt_buffer(aes_ctx, bytes, len);
+    bytes_to_string(bytes, len, ctxt);
+}
+
+void aes_decrypt(struct AES_ctx *aes_ctx, char* ctxt, int len, char* ptxt) {
+    AES_ctx_set_iv(aes_ctx, aes_iv);
+    uint8_t bytes[len];
+    string_to_bytes(ctxt, len, bytes);
+    AES_CBC_decrypt_buffer(aes_ctx, bytes, len);
+    bytes_to_string(bytes, len, ptxt);
+}

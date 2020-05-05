@@ -10,6 +10,9 @@
 #include "aes.h"
 #include "aes-ssl.h"
 
+#include "fnr.h"
+#include "fnr-ssl.h"
+
 #include "elgamal-bd.h"
 #include "elgamal-bn.h"
 #include "elgamal-gmp.h"
@@ -53,39 +56,27 @@ void print_all(
 }
 
 void time_aes() {
-    uint8_t key[] = {
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-    uint8_t iv[] = {
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-    uint8_t ptxt[] = {
-            0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
-            0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
-            0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c,
-            0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51
-    };
-    uint8_t ptxt_copy[64];
-    memcpy(ptxt_copy, ptxt, sizeof(ptxt));
     struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, key, iv);
+    aes_init(&ctx);
+
+
+    char* ptxt = "1234567890123456";
+    int len = 16;
+    char ctxt[len];
+    char decr[len];
 
     int N = 1000, W = 100;
     unsigned long start = 0, elapsed = 0;
     unsigned long time_enc[N], time_dec[N];
 
     for (int i = 0; i < N + W; i++) {
-        AES_ctx_set_iv(&ctx, iv);
         start = time_micros();
-        AES_CBC_encrypt_buffer(&ctx, ptxt, 32);
+        aes_encrypt(&ctx, ptxt, len, ctxt);
         elapsed = time_micros() - start;
         if (i >= W)
             time_enc[i - W] = elapsed;
-        AES_ctx_set_iv(&ctx, iv);
         start = time_micros();
-        AES_CBC_decrypt_buffer(&ctx, ptxt, 32);
+        aes_decrypt(&ctx, ctxt, len, decr);
         elapsed = time_micros() - start;
         if (i >= W)
             time_dec[i - W] = elapsed;
@@ -120,6 +111,62 @@ void time_aes_ssl() {
             time_dec[i - W] = elapsed;
     }
     printf("AES-SSL\n------------\nEncrypt\n");
+    print_one(time_enc, N);
+    printf("\nDecrypt\n");
+    print_one(time_dec, N);
+    printf("\n");
+}
+
+void time_fnr() {
+    unsigned char ptxt[32] = "aaaa";
+    unsigned char ctxt[32], decr[32];
+    fnr_init();
+
+    int N = 1000, W = 100;
+    unsigned long start = 0, elapsed = 0;
+    unsigned long time_enc[N], time_dec[N];
+
+    for (int i = 0; i < N + W; i++) {
+        start = time_micros();
+        fnr_encrypt(ptxt, ctxt);
+        elapsed = time_micros() - start;
+        if (i >= W)
+            time_enc[i - W] = elapsed;
+        start = time_micros();
+        fnr_decrypt(decr, ctxt);
+        elapsed = time_micros() - start;
+        if (i >= W)
+            time_dec[i - W] = elapsed;
+    }
+    printf("FNR\n------------\nEncrypt\n");
+    print_one(time_enc, N);
+    printf("\nDecrypt\n");
+    print_one(time_dec, N);
+    printf("\n");
+}
+
+void time_fnr_ssl() {
+    unsigned char ptxt[32] = "aaaa";
+    unsigned char ctxt[32], decr[32];
+    fnr_ssl_init();
+
+    int N = 1000, W = 100;
+    unsigned long start = 0, elapsed = 0;
+    unsigned long time_enc[N], time_dec[N];
+
+    for (int i = 0; i < N + W; i++) {
+        start = time_micros();
+        fnr_ssl_encrypt(ptxt, ctxt);
+        elapsed = time_micros() - start;
+        if (i >= W)
+            time_enc[i - W] = elapsed;
+        start = time_micros();
+        fnr_ssl_decrypt(decr, ctxt);
+        elapsed = time_micros() - start;
+        if (i >= W)
+            time_dec[i - W] = elapsed;
+    }
+    printf("FNR-SSL\n------------\nEncrypt\n");
     print_one(time_enc, N);
     printf("\nDecrypt\n");
     print_one(time_dec, N);
@@ -196,6 +243,10 @@ int main(void) {
     time_aes();
     printf("\n");
     time_aes_ssl();
+    printf("\n");
+    time_fnr();
+    printf("\n");
+    time_fnr_ssl();
     printf("\n");
 
     for (int scheme = elgamal_scheme; scheme <= paillier_scheme; scheme++) {
