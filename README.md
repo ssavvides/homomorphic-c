@@ -9,6 +9,9 @@ Currently the library contains implementations of:
 - AES
     - AES – using the [tiny-AES](https://github.com/kokke/tiny-AES-c/blob/master/aes.c) repo
     - AES-SSL  – using the openSSL implementation
+- FNR ([ref repo](https://github.com/cisco/libfnr))
+    - FNR - using tiny-AES internally
+    - FNR-SSL - using openSSL
 - ElGamal
     - ElGamal-BD – using the `BIGD` primitive of the [BigDigits](https://www.di-mgt.com.au/bigdigits.html) library
     - ElGamal-BN – using the `BIGNUM` primitive of the [openSSL](https://www.openssl.org/) library
