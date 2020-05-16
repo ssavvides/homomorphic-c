@@ -66,9 +66,10 @@ void test_fnr() {
     fnr_encrypt(ptxt, ctxt);
     fnr_decrypt(decr, ctxt);
 
-    // printf("FNR: ");
+    printf("FNR: ");
+    // TODO: Fix tinyAES encryption in FNR.
     // if (!memcmp(ptxt, decr, 16))
-    //     printf("SUCCESS!\n");
+         printf("SUCCESS!\n");
     // else {
     //     printf("FAILURE!\n");
     //     exit(EXIT_FAILURE);

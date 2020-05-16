@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -I/usr/include -Wall -pedantic -Wno-unused-function \
+CFLAGS = -g -I/usr/include -pedantic \
 	-Wno-deprecated-declarations -std=gnu11
 LDFLAGS = -lm -lssl -lcrypto -lgmp
 DEPS = time.h pk.h

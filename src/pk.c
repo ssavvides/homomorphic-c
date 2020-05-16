@@ -5,21 +5,30 @@ bool is_ahe(scheme_t scheme) {
 }
 
 void init_schemes(BN_CTX *ctx) {
+    printf("Initializing schemes with N = %d\n", DEFAULT_KEY_LEN);
+
+
+    printf("Initializing Paillier BD\n");
     paillier_bd_init(&pail_bd_pk, &pail_bd_sk);
     pail_bd_ctxt = bdNew();
 
+    printf("Initializing Paillier BN\n");
     paillier_bn_init(&pail_bn_pk, &pail_bn_sk, ctx);
     pail_bn_ctxt = BN_CTX_get(ctx);
 
+    printf("Initializing Paillier GMP\n");
     paillier_gmp_init(&pail_gmp_pk, &pail_gmp_sk);
     mpz_init(pail_gmp_ctxt);
 
+    printf("Initializing ElGamal BD\n");
     elgamal_bd_init(&elg_bd_pk, &elg_bd_sk);
     elgamal_bd_ctxt_init(&elg_bd_ctxt);
 
+    printf("Initializing ElGamal BN\n");
     elgamal_bn_init(&elg_bn_pk, &elg_bn_sk, ctx);
     elgamal_bn_ctxt_init(&elg_bn_ctxt, ctx);
 
+    printf("Initializing ElGamal GMP\n");
     elgamal_gmp_init(&elg_gmp_pk, &elg_gmp_sk);
     elgamal_gmp_ctxt_init(&elg_gmp_ctxt);
 }
