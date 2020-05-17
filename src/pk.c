@@ -7,7 +7,6 @@ bool is_ahe(scheme_t scheme) {
 void init_schemes(BN_CTX *ctx) {
     printf("Initializing schemes with N = %d\n", DEFAULT_KEY_LEN);
 
-
     printf("Initializing Paillier BD\n");
     paillier_bd_init(&pail_bd_pk, &pail_bd_sk);
     pail_bd_ctxt = bdNew();

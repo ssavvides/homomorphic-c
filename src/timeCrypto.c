@@ -238,23 +238,23 @@ void time_scheme(scheme_t scheme, library_t library, BN_CTX *ctx) {
 
 int main(void) {
     BN_CTX *ctx = BN_CTX_new();
-    init_schemes(ctx);
+    //init_schemes(ctx);
 
-    time_aes();
-    printf("\n");
-    time_aes_ssl();
-    printf("\n");
-    time_fnr();
-    printf("\n");
-    time_fnr_ssl();
-    printf("\n");
+    // time_aes();
+    // printf("\n");
+    // time_aes_ssl();
+    // printf("\n");
+    // time_fnr();
+    // printf("\n");
+    // time_fnr_ssl();
+    // printf("\n");
 
-    for (int scheme = elgamal_scheme; scheme <= paillier_scheme; scheme++) {
-        for (int library = bigdigits_lib; library <= gmp_lib; library++) {
-            time_scheme(scheme, library, ctx);
-            printf("\n");
-        }
-    }
+    printf("Initializing Paillier BN\n");
+    paillier_bn_init(&pail_bn_pk, &pail_bn_sk, ctx);
+    pail_bn_ctxt = BN_CTX_get(ctx);
+
+    time_scheme(paillier_scheme, ssl_lib, ctx);
+
 
     exit(EXIT_SUCCESS);
 }
