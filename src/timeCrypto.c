@@ -190,6 +190,8 @@ void time_scheme(scheme_t scheme, library_t library, BN_CTX *ctx) {
     for (int i = 0; i < N + W; i++) {
         int r = rand() % 1000;
 
+        printf("iteration %d\n", i);
+
         start = time_micros();
         encrypt(scheme, library, r, false, ctx);
         elapsed = time_micros() - start;
