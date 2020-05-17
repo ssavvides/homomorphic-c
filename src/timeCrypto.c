@@ -210,20 +210,20 @@ void time_scheme(scheme_t scheme, library_t library, BN_CTX *ctx) {
         // if (i >= W)
         //     time_dec[i - W] = elapsed;
 
-        // for (int i = 0; i < items; ++i)
-        //     messages[i] = rand() % 1000;
+        for (int i = 0; i < items; ++i)
+            messages[i] = rand() % 1000;
 
-        // start = time_micros();
-        // encrypt_packed(scheme, library, messages, items, false, ctx);
-        // elapsed = (time_micros() - start);
-        // if (i >= W)
-        //     time_enc_packed[i - W] = elapsed;
+        start = time_micros();
+        encrypt_packed(scheme, library, messages, items, false, ctx);
+        elapsed = (time_micros() - start);
+        if (i >= W)
+            time_enc_packed[i - W] = elapsed;
 
-        // start = time_micros();
-        // encrypt_packed(scheme, library, messages, items, true, ctx);
-        // elapsed = (time_micros() - start);
-        // if (i >= W)
-        //     time_enc_pre_packed[i - W] = elapsed;
+        start = time_micros();
+        encrypt_packed(scheme, library, messages, items, true, ctx);
+        elapsed = (time_micros() - start);
+        if (i >= W)
+            time_enc_pre_packed[i - W] = elapsed;
 
         // start = time_micros();
         // decrypt(scheme, library, decrs, ctx);
